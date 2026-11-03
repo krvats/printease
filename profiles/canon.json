@@ -1,0 +1,36 @@
+{
+  "id": "canon",
+  "name": "Canon printer",
+  "match": [
+    "Canon"
+  ],
+  "driver_hints": [
+    "gutenprint",
+    "canon",
+    "cnijfilter"
+  ],
+  "packages": {
+    "pacman": [
+      "cups",
+      "gutenprint"
+    ],
+    "apt": [
+      "cups",
+      "printer-driver-gutenprint"
+    ],
+    "dnf": [
+      "cups",
+      "gutenprint-cups"
+    ],
+    "zypper": [
+      "cups",
+      "gutenprint"
+    ]
+  },
+  "maintenance": [
+    {
+      "title": "Head cleaning",
+      "how": "Use the printer's maintenance menu for your model."
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PrintEase</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#05070f;--card:rgba(18,26,48,.72);--line:rgba(120,160,255,.18);--tx:#e8eeff;--mut:#8b9ac4;--ac:#4fa3ff;--ac2:#7cf2c9;--bad:#ff6b81}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:'Space Grotesk',system-ui,sans-serif;color:var(--tx);background:radial-gradient(1200px 500px at 50% 118%,#1b5fd1 0,#0c2a66 28%,transparent 62%),radial-gradient(1px 1px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 70% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 40% 70%,#cfe3ff,transparent),radial-gradient(1px 1px at 85% 60%,#fff,transparent),var(--bg);display:flex}
+nav{width:200px;padding:22px 14px;border-right:1px solid var(--line);background:rgba(5,7,15,.6);display:flex;flex-direction:column;gap:6px}
+nav h1{font-size:20px;margin:0 0 18px 8px}nav h1 span{color:var(--ac)}
+nav button{all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;color:var(--mut)}
+nav button:hover,nav button.on{background:rgba(79,163,255,.16);color:var(--tx)}
+nav .ver{margin:auto 8px 0;font-size:11px;color:var(--mut)}
+main{flex:1;padding:26px 30px;overflow:auto}section{display:none;max-width:780px}section.on{display:block}
+h2{margin:0 0 4px}p.sub{color:var(--mut);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sp{flex:1}
+button.b,label.b{all:unset;cursor:pointer;background:linear-gradient(135deg,#2f7dff,#4fa3ff);color:#fff;padding:9px 16px;border-radius:10px;font-weight:500}
+button.b:hover,label.b:hover{filter:brightness(1.12)}button.g{background:rgba(255,255,255,.1)!important}
+select,input[type=number]{background:#0b1226;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(124,242,201,.15);color:var(--ac2)}
+.mut{color:var(--mut);font-size:13px}pre{white-space:pre-wrap;color:var(--mut);font-size:12px}
+.bar{height:10px;border-radius:6px;background:#0b1226;overflow:hidden;width:180px}.bar i{display:block;height:100%}
+#toast{position:fixed;right:20px;bottom:20px;background:#0b1226;border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:none;max-width:420px;white-space:pre-wrap}
+</style></head><body>
+<nav><h1>Print<span>Ease</span></h1>
+<button data-t="setup" class="on">Printer</button><button data-t="print">Print</button>
+<button data-t="border">Borderless</button><button data-t="maint">Maintenance</button><button data-t="upd">Updates</button>
+<div class="ver">v__VERSION__ &middot; <span id="dist"></span></div></nav>
+<main>
+<section id="setup" class="on"><h2>Your printers</h2><p class="sub">Plug in and switch on. PrintEase finds it and loads the right profile.</p>
+<div id="found"></div><div id="qs"></div><button class="b g" onclick="load()">Rescan</button></section>
+<section id="print"><h2>Print</h2><p class="sub">Pick a file, choose a style, print.</p>
+<div class="card"><div class="row"><label class="b">Choose file<input id="file" type="file" hidden onchange="fn.textContent=this.files[0]?.name||''"></label><span id="fn" class="mut">no file</span></div></div>
+<div class="card"><div class="row">Printer <select id="q" onchange="loadOpts()"></select> Paper <select id="size"></select> Copies <input id="copies" type="number" min="1" value="1" style="width:70px"></div>
+<div class="row" style="margin-top:12px"><label><input type="checkbox" id="photo"> Photo quality</label><label><input type="checkbox" id="bl"> Borderless</label><span id="blhint" class="mut"></span></div></div>
+<button class="b" onclick="doPrint()">Print</button></section>
+<section id="border"><h2>Borderless</h2><p class="sub">Test edge-to-edge printing and probe sibling drivers for more borderless sizes.</p>
+<div class="card"><div id="bsizes" class="mut">Set up a printer first.</div></div>
+<div class="row"><button class="b" onclick="test('edge')">Print edge test</button><button class="b g" onclick="probe(false)">Probe sibling drivers</button><button class="b g" onclick="probe(true)">Probe + create queues</button></div><pre id="probeout"></pre></section>
+<section id="maint"><h2>Maintenance</h2><p class="sub">Ink levels (if reported), test prints and model tips.</p>
+<div class="card" id="ink"><span class="mut">No ink data.</span></div>
+<div class="row"><button class="b" onclick="test('nozzle')">Print nozzle pattern</button></div><div id="steps" style="margin-top:14px"></div></section>
+<section id="upd"><h2>Updates</h2><p class="sub">New printer profiles arrive from GitHub. No reinstall needed.</p>
+<div class="row"><button class="b" onclick="act('sync')">Sync printer profiles</button><button class="b g" onclick="act('update')">Update app</button><button class="b g" onclick="act('star')">&#9733; Star the repo</button></div>
+<div class="card" style="margin-top:14px"><b>Printer not recognised?</b><p class="mut">Send a ready-made profile draft so the next person gets it for free.</p><button class="b g" onclick="contribute()">Contribute this printer</button></div></section>
+</main><div id="toast"></div>
+<script>
+const T="__TOKEN__";let S={printers:[],queues:[]};const $=id=>document.getElementById(id);
+async function call(p,o={}){const r=await fetch(p,{method:o.body!==undefined?"POST":"GET",headers:{"X-Token":T,...(o.h||{})},body:o.body});return r.json()}
+function toast(m,ok=true){const t=$("toast");t.textContent=m;t.style.borderColor=ok?"var(--ac2)":"var(--bad)";t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",7000)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button,section").forEach(e=>e.classList.remove("on"));b.classList.add("on");$(b.dataset.t).classList.add("on");if(b.dataset.t=="maint")maint()});
+async function load(){S=await call("/api/status");$("dist").textContent=S.distro;if(!S.cups)toast("CUPS is not installed. Re-run the installer.",false);
+ $("found").innerHTML=S.printers.length?S.printers.map((p,i)=>`<div class="card row"><div><b>${p.vendor} ${p.model}</b> <span class="tag">${p.transport}</span><div class="mut">profile: ${p.profile}</div></div><span class="sp"></span><button class="b g" onclick="installDrv(${i})">Install drivers</button><button class="b" onclick="setupP(${i})">Set up</button></div>`).join(""):'<div class="card mut">No printer detected. Check cable and power, then Rescan.</div>';
+ $("qs").innerHTML=S.queues.map(q=>`<div class="card row"><b>${q.name}</b>${q.default?' <span class="tag">default</span>':""}<span class="sp"></span><span class="mut">${q.uri}</span></div>`).join("");
+ $("q").innerHTML=S.queues.map(q=>`<option>${q.name}</option>`).join("");if(S.queues.length)loadOpts()}
+async function setupP(i){const p=S.printers[i];const r=await call("/api/setup",{body:JSON.stringify({uri:p.uri,profile:p.profile})});toast(r.ok?`Ready: queue ${r.queue}`:r.message,r.ok);load()}
+async function installDrv(i){toast("Installing... a password prompt may appear.");const r=await call("/api/install-drivers",{body:JSON.stringify({profile:S.printers[i].profile})});toast(r.results.map(x=>(x.ok?"OK: ":"Failed: ")+x.cmd+(x.ok?"":" "+x.message)).join("\n"),r.results.every(x=>x.ok))}
+async function loadOpts(){const r=await call("/api/options?queue="+encodeURIComponent($("q").value));const ps=r.options.find(o=>o.key=="PageSize")||{choices:["A4","Letter"],default:"A4"};
+ $("size").innerHTML=ps.choices.filter(c=>!/border|full/i.test(c)).map(c=>`<option ${c==ps.default?"selected":""}>${c}</option>`).join("");
+ $("blhint").textContent=r.borderless.length?"Driver offers: "+r.borderless.join(", "):"No borderless size in this driver.";
+ $("bsizes").textContent=r.borderless.length?"Borderless sizes: "+r.borderless.join(", "):"This driver lists no borderless sizes.";
+ $("ink").innerHTML=r.ink.length?r.ink.map(k=>`<div class="row"><span style="width:110px">${k.name}</span><div class="bar"><i style="width:${Math.max(k.level,0)}%;background:${k.color||"#4fa3ff"}"></i></div><span class="mut">${k.level<0?"?":k.level+"%"}</span></div>`).join(""):'<span class="mut">This printer does not report ink levels.</span>'}
+async function doPrint(){const f=$("file").files[0];if(!f)return toast("Choose a file first",false);if(!$("q").value)return toast("Set up a printer first",false);
+ const qs=new URLSearchParams({queue:$("q").value,size:$("size").value,copies:$("copies").value,photo:+$("photo").checked,borderless:+$("bl").checked});
+ const r=await call("/api/print?"+qs,{body:await f.arrayBuffer(),h:{"X-Filename":encodeURIComponent(f.name)}});toast((r.notes||[]).join(" ")+" "+(r.message||""),r.ok)}
+async function test(k){if(!$("q").value)return toast("Set up a printer first",false);const r=await call(`/api/test?queue=${encodeURIComponent($("q").value)}&kind=${k}`,{body:"{}"});toast(r.message||"sent",r.ok)}
+async function probe(c){const p=S.printers[0];if(!p)return toast("No printer detected",false);$("probeout").textContent="Probing...";
+ const r=await call("/api/probe",{body:JSON.stringify({profile:p.profile,uri:p.uri,create:c,queue:$("q").value})});
+ $("probeout").textContent=r.report.map(x=>`${x.model}: ${x.status}${x.borderless?.length?" -> "+x.borderless.join(", "):""}${x.queue?"  [queue "+x.queue+"]":""}`).join("\n");if(c)load()}
+async function maint(){const p=S.printers[0];if(!p)return;const r=await call("/api/maintenance",{body:JSON.stringify({profile:p.profile})});
+ $("steps").innerHTML=r.steps.map(s=>`<div class="card"><b>${s.title}</b><div class="mut">${s.how}</div></div>`).join("")+(r.notes?`<p class="mut">${r.notes}</p>`:"")}
+async function act(a){toast("Working...");const r=await call("/api/"+a,{body:"{}"});toast(r.message||"Done",r.ok!==false);if(a=="sync")load()}
+async function contribute(){const p=S.printers[0];if(!p)return toast("No printer detected",false);await call("/api/contribute",{body:JSON.stringify({printer:p})});toast("Opened GitHub with a profile draft. Thank you!")}
+load();setInterval(()=>call("/api/ping").catch(()=>{}),5000);call("/api/ping");
+</script></body></html>

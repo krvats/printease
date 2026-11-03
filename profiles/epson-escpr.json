@@ -1,0 +1,37 @@
+{
+  "id": "epson-escpr",
+  "name": "Epson inkjet",
+  "match": [
+    "EPSON"
+  ],
+  "driver_hints": [
+    "escpr2",
+    "escpr"
+  ],
+  "packages": {
+    "pacman": [
+      "cups",
+      "cups-filters",
+      "ghostscript"
+    ],
+    "aur": [
+      "epson-inkjet-printer-escpr2"
+    ],
+    "apt": [
+      "cups",
+      "printer-driver-escpr"
+    ],
+    "dnf": [
+      "cups"
+    ],
+    "zypper": [
+      "cups"
+    ]
+  },
+  "maintenance": [
+    {
+      "title": "Head cleaning",
+      "how": "Most Epson inkjets: hold the ink/maintenance button for 3 seconds."
+    }
+  ]
+}

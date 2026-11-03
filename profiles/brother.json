@@ -1,0 +1,35 @@
+{
+  "id": "brother",
+  "name": "Brother printer",
+  "match": [
+    "Brother"
+  ],
+  "driver_hints": [
+    "brother",
+    "brlaser"
+  ],
+  "packages": {
+    "pacman": [
+      "cups",
+      "brlaser"
+    ],
+    "apt": [
+      "cups",
+      "printer-driver-brlaser"
+    ],
+    "dnf": [
+      "cups",
+      "brlaser"
+    ],
+    "zypper": [
+      "cups",
+      "brlaser"
+    ]
+  },
+  "maintenance": [
+    {
+      "title": "Toner/drum",
+      "how": "Replace when the printer reports low; reset via the printer menu."
+    }
+  ]
+}
