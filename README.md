@@ -1,6 +1,12 @@
 <div align="center">
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg" width="220" alt="The Blue Marble, photographed by the Apollo 17 crew (NASA)">
+<br>
+
+<a href="https://commons.wikimedia.org/wiki/File:Tsunami_by_hokusai_19th_century.jpg"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Tsunami_by_hokusai_19th_century.jpg?width=1000" alt="The Great Wave off Kanagawa by Katsushika Hokusai, a Japanese woodblock print of a huge wave and Mount Fuji" width="680"></a>
+
+<sub><i>Katsushika Hokusai, “Under the Wave off Kanagawa”, c. 1830 to 1832. Public domain.<br>One quiet scene, one bright spark. That is the mood Glint is after.</i></sub>
+
+<br><br>
 
 # 🖨️ PrintEase
 
