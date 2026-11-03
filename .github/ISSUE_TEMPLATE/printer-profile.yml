@@ -1,0 +1,12 @@
+name: Printer profile
+description: Add support for a new printer
+title: "Profile: "
+labels: [profile]
+body:
+  - type: textarea
+    id: profile
+    attributes: {label: Profile JSON, description: "Pre-filled by the app (Updates > Contribute this printer)."}
+    validations: {required: true}
+  - type: textarea
+    id: notes
+    attributes: {label: Does it work? Borderless sizes, driver used, distro}
