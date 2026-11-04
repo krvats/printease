@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><title>PrintEase</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+  --void:#070810;--layer:#111827;--l2:#1A2436;--l3:#243050;
+  --rim:rgba(100,148,255,.09);--rim2:rgba(100,148,255,.18);
+  --cy:#22D3EE;--cy-g:rgba(34,211,238,.09);--cy-b:rgba(34,211,238,.18);
+  --mg:#E879F9;--mg-g:rgba(232,121,249,.09);
+  --am:#FBBF24;--am-g:rgba(251,191,36,.09);
+  --paper:#E2E8F0;--slate:#94A3B8;--dim:#475569;
+  --ok:#34D399;--ok-g:rgba(52,211,153,.10);
+  --er:#F87171;--er-g:rgba(248,113,113,.10);
+  --r:10px;--rs:6px;--sh:0 4px 24px rgba(0,0,0,.55)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Space Grotesk',system-ui,sans-serif;font-size:14px;background:var(--void);color:var(--paper);display:flex}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+#sidebar{width:218px;min-width:218px;height:100vh;display:flex;flex-direction:column;background:rgba(7,8,16,.95);border-right:1px solid var(--rim)}
+.logo{display:flex;align-items:center;gap:10px;padding:20px 18px 14px;border-bottom:1px solid var(--rim)}
+.logo-icon{width:30px;height:30px;flex-shrink:0}
+.logo-text{font-size:16.5px;font-weight:700;letter-spacing:-.3px;color:var(--paper)}
+.logo-text span{color:var(--cy)}
+.cups-row{display:flex;align-items:center;gap:7px;padding:7px 18px;font-size:11px;color:var(--dim);border-bottom:1px solid var(--rim)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .4s}
+.sdot.ok{background:var(--ok);box-shadow:0 0 7px var(--ok)}
+.sdot.er{background:var(--er)}
+nav{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
+nav::-webkit-scrollbar{width:0}
+.nlabel{font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.08em;padding:9px 10px 3px;text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:7px;color:var(--slate);cursor:pointer;font-size:13px;font-weight:500;transition:background .12s,color .12s;border:1px solid transparent}
+.ni:hover{background:rgba(100,148,255,.06);color:var(--paper)}
+.ni.on{background:var(--cy-g);color:var(--cy);border-color:var(--cy-b)}
+.ni i{width:15px;text-align:center;font-size:12px}
+.ndiv{height:1px;background:var(--rim);margin:5px 3px}
+.sfoot{padding:11px 18px;border-top:1px solid var(--rim);display:flex;align-items:center;justify-content:space-between}
+.vbadge{font-size:10.5px;font-family:ui-monospace,monospace;color:var(--dim);background:rgba(255,255,255,.03);padding:2px 7px;border-radius:4px;border:1px solid var(--rim)}
+.dbadge{font-size:11px;font-family:ui-monospace,monospace;color:var(--slate)}
+
+/* ── MAIN ────────────────────────────────────────────────── */
+#app{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#demo-bar{background:rgba(251,191,36,.07);border-bottom:1px solid rgba(251,191,36,.18);padding:6px 26px;font-size:12px;color:var(--am);display:none;align-items:center;gap:8px}
+#hdr{height:46px;min-height:46px;display:flex;align-items:center;padding:0 26px;border-bottom:1px solid var(--rim);background:rgba(7,8,16,.7);backdrop-filter:blur(10px);gap:12px}
+.hcrumb{font-size:13px;font-weight:600;color:var(--paper)}
+.hq-wrap{display:flex;align-items:center;gap:8px;margin-left:auto}
+.hqsel{background:var(--layer);border:1px solid var(--rim);color:var(--paper);font-family:inherit;font-size:12.5px;font-weight:500;padding:5px 9px;border-radius:var(--rs);cursor:pointer;outline:none;max-width:220px}
+.hqsel:focus{border-color:var(--cy)}
+#content{flex:1;overflow-y:auto;padding:26px 30px}
+#content::-webkit-scrollbar{width:4px}
+#content::-webkit-scrollbar-thumb{background:var(--l3);border-radius:2px}
+section{display:none;max-width:880px;animation:fi .18s ease}
+section.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SECTION HEAD ────────────────────────────────────────── */
+.sh{margin-bottom:22px}
+.sh h2{font-size:21px;font-weight:700;letter-spacing:-.3px;margin-bottom:3px}
+.sh p{font-size:13px;color:var(--slate);line-height:1.6}
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card{background:var(--layer);border:1px solid var(--rim);border-radius:var(--r);padding:16px 18px;margin-bottom:12px}
+.card-sm{padding:11px 15px}
+.ctitle{font-size:11.5px;font-weight:600;color:var(--dim);margin-bottom:11px;letter-spacing:.03em}
+
+/* ── GRID ────────────────────────────────────────────────── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .13s;outline:none;line-height:1}
+.btn-p{background:var(--cy);color:#000;border-color:var(--cy)}
+.btn-p:hover{filter:brightness(1.1)}
+.btn-p:active{filter:brightness(.92)}
+.btn-g{background:rgba(255,255,255,.05);color:var(--paper);border-color:var(--rim)}
+.btn-g:hover{background:rgba(255,255,255,.09);border-color:var(--rim2)}
+.btn-d{background:var(--er-g);color:var(--er);border-color:rgba(248,113,113,.22)}
+.btn-d:hover{background:rgba(248,113,113,.18)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
+.btn:disabled{opacity:.38;cursor:not-allowed;pointer-events:none}
+
+/* ── PRINT BUTTON ────────────────────────────────────────── */
+#print-btn{width:100%;padding:14px;background:linear-gradient(135deg,#0E7490,#0EA5E9,#22D3EE);color:#000;font-size:15.5px;font-weight:700;border:none;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:filter .15s,transform .1s;letter-spacing:-.2px;position:relative;overflow:hidden;margin-top:14px}
+#print-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+#print-btn:active{transform:scale(.985);filter:brightness(.93)}
+#print-btn.printing{animation:pp 1s ease-in-out infinite}
+#print-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;pointer-events:none}
+@keyframes pp{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+
+/* ── FORM ────────────────────────────────────────────────── */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.fl{font-size:11.5px;font-weight:600;color:var(--slate)}
+.input,.sel{background:rgba(255,255,255,.04);border:1px solid var(--rim2);color:var(--paper);font-family:inherit;font-size:13.5px;padding:7px 9px;border-radius:var(--rs);outline:none;width:100%;transition:border-color .14s}
+.input:focus,.sel:focus{border-color:var(--cy);background:var(--cy-g)}
+.sel option{background:var(--l2);color:var(--paper)}
+.input-sm{font-size:12.5px;padding:5px 8px}
+.mono{font-family:ui-monospace,monospace;font-size:12px}
+.num-in{display:flex;align-items:center;border:1px solid var(--rim2);border-radius:var(--rs);overflow:hidden;background:rgba(255,255,255,.04);width:fit-content}
+.num-in button{background:none;border:none;color:var(--slate);padding:6px 11px;cursor:pointer;font-size:14px;line-height:1;transition:background .1s,color .1s}
+.num-in button:hover{background:rgba(255,255,255,.07);color:var(--paper)}
+.num-in input{background:none;border:none;outline:none;text-align:center;color:var(--paper);font-family:ui-monospace,monospace;font-size:14px;font-weight:600;width:48px;padding:6px 2px}
+
+/* ── TOGGLE ──────────────────────────────────────────────── */
+.tog{position:relative;display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.tog input{position:absolute;opacity:0;width:0;height:0}
+.ttrack{width:34px;height:19px;background:var(--l2);border:1px solid var(--rim2);border-radius:10px;position:relative;transition:all .2s;flex-shrink:0}
+.ttrack::after{content:'';position:absolute;left:2px;top:2px;width:13px;height:13px;background:var(--slate);border-radius:50%;transition:transform .2s,background .2s}
+.tog input:checked~.ttrack{background:var(--cy-g);border-color:rgba(34,211,238,.4)}
+.tog input:checked~.ttrack::after{transform:translateX(15px);background:var(--cy)}
+.tlabel{font-size:13.5px;font-weight:500}
+
+/* ── SLIDER ──────────────────────────────────────────────── */
+.sl-wrap{display:flex;align-items:center;gap:9px}
+.sl-wrap input[type=range]{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--l2);outline:none;cursor:pointer}
+.sl-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--cy);cursor:pointer;box-shadow:0 0 5px rgba(34,211,238,.35)}
+.sv{font-size:12px;font-family:ui-monospace,monospace;color:var(--slate);min-width:38px;text-align:right}
+
+/* ── BADGES ──────────────────────────────────────────────── */
+.b{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;flex-shrink:0}
+.b-ok{background:var(--ok-g);color:var(--ok);border:1px solid rgba(52,211,153,.2)}
+.b-w{background:var(--am-g);color:var(--am);border:1px solid rgba(251,191,36,.2)}
+.b-er{background:var(--er-g);color:var(--er);border:1px solid rgba(248,113,113,.2)}
+.b-mg{background:var(--mg-g);color:var(--mg);border:1px solid rgba(232,121,249,.2)}
+.b-cy{background:var(--cy-g);color:var(--cy);border:1px solid var(--cy-b)}
+
+/* ── PRINTER CARDS ───────────────────────────────────────── */
+.pcard{background:var(--layer);border:1px solid var(--rim);border-radius:var(--r);padding:14px 16px;margin-bottom:9px;display:flex;align-items:flex-start;gap:13px;transition:border-color .14s}
+.pcard:hover{border-color:var(--rim2)}
+.picon{width:40px;height:40px;border-radius:9px;background:var(--l2);display:flex;align-items:center;justify-content:center;color:var(--cy);font-size:16px;flex-shrink:0}
+.pinfo{flex:1;min-width:0}
+.pname{font-size:13.5px;font-weight:700;margin-bottom:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.puri{font-family:ui-monospace,monospace;font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px}
+.pacts{display:flex;gap:6px;flex-shrink:0;align-items:center}
+
+/* ── INK ─────────────────────────────────────────────────── */
+.ink-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:11px}
+.ik{background:var(--layer);border:1px solid var(--rim);border-radius:var(--r);padding:13px 15px;display:flex;flex-direction:column;gap:9px}
+.ik-h{display:flex;align-items:center;justify-content:space-between}
+.ik-n{font-size:12.5px;font-weight:600}
+.ik-pct{font-size:22px;font-weight:700;line-height:1}
+.ik-bar{height:7px;border-radius:4px;background:var(--l2);overflow:hidden}
+.ik-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.ik-sub{font-size:11.5px;color:var(--slate)}
+
+/* ── DROP ZONE ───────────────────────────────────────────── */
+.dz{border:2px dashed var(--rim2);border-radius:var(--r);padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .14s,background .14s;position:relative;margin-bottom:12px}
+.dz:hover,.dz.over{border-color:var(--cy);background:var(--cy-g)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:34px;color:var(--dim);display:block;margin-bottom:9px;transition:color .14s}
+.dz.has .dz-icon{color:var(--cy)}
+.dz-t{font-size:14px;font-weight:500;color:var(--slate)}
+.dz-s{font-size:12px;color:var(--dim);margin-top:3px}
+.fn{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--cy);font-weight:600;margin-top:5px;display:none;word-break:break-all}
+
+/* ── OPTS (CUPS options rendered live) ───────────────────── */
+.og{background:var(--layer);border:1px solid var(--rim);border-radius:var(--r);margin-bottom:11px;overflow:hidden}
+.ogh{padding:11px 16px;font-size:11.5px;font-weight:700;color:var(--slate);letter-spacing:.04em;border-bottom:1px solid var(--rim);background:rgba(255,255,255,.018);display:flex;align-items:center;gap:7px}
+.or{display:flex;align-items:center;padding:9px 16px;gap:11px;border-bottom:1px solid var(--rim);transition:background .1s}
+.or:last-child{border-bottom:none}
+.or:hover{background:rgba(255,255,255,.018)}
+.on-{flex:1;font-size:13.5px;font-weight:500}
+.oc{flex-shrink:0;min-width:200px}
+.oc .sel{font-size:12.5px;padding:5px 8px}
+
+/* ── SETTINGS ROWS ───────────────────────────────────────── */
+.sr{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--rim);gap:11px}
+.sr:last-child{border-bottom:none}
+.sl-{flex:1;font-size:13.5px;font-weight:500}
+.sl- small{display:block;font-size:11.5px;color:var(--dim);margin-top:1px}
+.sc{flex-shrink:0}
+
+/* ── QUEUE TABLE ─────────────────────────────────────────── */
+.qtbl{width:100%;border-collapse:collapse}
+.qtbl th{text-align:left;font-size:11px;font-weight:600;color:var(--dim);letter-spacing:.05em;padding:8px 13px;border-bottom:1px solid var(--rim)}
+.qtbl td{padding:10px 13px;font-size:13px;border-bottom:1px solid var(--rim)}
+.qtbl tr:last-child td{border-bottom:none}
+.qtbl tr:hover td{background:rgba(255,255,255,.018)}
+.jid{font-family:ui-monospace,monospace;font-size:11px;color:var(--dim)}
+
+/* ── STAT CARDS ──────────────────────────────────────────── */
+.sc-{background:var(--layer);border:1px solid var(--rim);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.sc-label{font-size:11.5px;font-weight:600;color:var(--dim);letter-spacing:.03em}
+.sc-val{font-size:26px;font-weight:700;letter-spacing:-.5px;line-height:1}
+.sc-sub{font-size:12px;color:var(--slate)}
+
+/* ── STEP ────────────────────────────────────────────────── */
+.step{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid var(--rim)}
+.step:last-child{border-bottom:none}
+.step-n{width:24px;height:24px;border-radius:50%;background:var(--l2);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--cy);flex-shrink:0;margin-top:1px}
+.step-tt{font-size:13.5px;font-weight:600;margin-bottom:2px}
+.step-hw{font-size:12.5px;color:var(--slate);line-height:1.6}
+
+/* ── TOAST ───────────────────────────────────────────────── */
+#ts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column-reverse;gap:7px;z-index:1000;pointer-events:none}
+.toast{background:var(--l2);border:1px solid var(--rim2);border-radius:9px;padding:11px 15px;max-width:370px;font-size:13px;line-height:1.5;pointer-events:all;animation:tai .2s ease;box-shadow:var(--sh);white-space:pre-wrap}
+.toast.ok{border-left:3px solid var(--ok)}
+.toast.er{border-left:3px solid var(--er)}
+.toast.info{border-left:3px solid var(--cy)}
+@keyframes tai{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── SPINNER ─────────────────────────────────────────────── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(34,211,238,.2);border-top-color:var(--cy);border-radius:50%;animation:sp .65s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── COLLAPSE ────────────────────────────────────────────── */
+.ctog{display:flex;align-items:center;gap:7px;padding:9px 0;cursor:pointer;font-size:13px;font-weight:600;color:var(--slate);border:none;background:none;font-family:inherit;transition:color .14s;width:100%}
+.ctog:hover{color:var(--paper)}
+.ctog i{transition:transform .2s;font-size:10px}
+.ctog.open i{transform:rotate(90deg)}
+.cbody{display:none;padding-top:4px}
+.cbody.open{display:block}
+
+/* ── PROBE RESULTS ───────────────────────────────────────── */
+.pr-{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--rim);gap:9px}
+.pr-:last-child{border-bottom:none}
+
+/* ── EMPTY ───────────────────────────────────────────────── */
+.empty{text-align:center;padding:36px 20px;color:var(--dim)}
+.empty i{font-size:30px;margin-bottom:11px;display:block;opacity:.45}
+.empty p{font-size:13.5px;color:var(--slate)}
+
+/* ── UTILS ───────────────────────────────────────────────── */
+.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.rbet{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.flex1{flex:1}
+.mt1{margin-top:5px}.mt2{margin-top:9px}.mt3{margin-top:14px}.mt4{margin-top:18px}
+.mb2{margin-bottom:9px}.mb3{margin-bottom:14px}
+.g8{gap:8px}.g6{gap:6px}
+.tx{font-size:12px}.tc{color:var(--cy)}.ts{color:var(--slate)}.td{color:var(--dim)}
+.tx-ok{color:var(--ok)}.tx-er{color:var(--er)}.tx-am{color:var(--am)}
+.fw6{font-weight:600}.fw7{font-weight:700}
+.sep{width:1px;height:16px;background:var(--rim);flex-shrink:0}
+pre.cod{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--slate);background:var(--l2);border-radius:7px;padding:11px;white-space:pre-wrap;line-height:1.6;border:1px solid var(--rim);margin-top:11px}
+
+/* ── PROGRESS ────────────────────────────────────────────── */
+.prog{height:3px;border-radius:2px;background:var(--l2);overflow:hidden;margin:7px 0}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--cy),var(--mg));border-radius:2px;transition:width .3s}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 30 30" fill="none">
+      <rect width="30" height="30" rx="7" fill="url(#lg)"/>
+      <rect x="8" y="7" width="14" height="2.5" rx="1" fill="white" opacity=".9"/>
+      <rect x="6" y="10" width="18" height="7" rx="2" fill="white" opacity=".75"/>
+      <rect x="9" y="17" width="12" height="6" rx="1.5" fill="white" opacity=".9"/>
+      <rect x="12" y="19" width="6" height="2" rx=".8" fill="#22D3EE"/>
+      <circle cx="21" cy="13.5" r="1.5" fill="#22D3EE"/>
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="30" y2="30">
+          <stop offset="0%" stop-color="#1D4ED8"/>
+          <stop offset="100%" stop-color="#7C3AED"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <span class="logo-text">Print<span>Ease</span></span>
+  </div>
+
+  <div class="cups-row">
+    <span class="sdot" id="sdot"></span>
+    <span id="stext">Connecting…</span>
+  </div>
+
+  <nav>
+    <div class="nlabel">Overview</div>
+    <div class="ni on" data-s="home"><i class="fa-solid fa-gauge-high"></i> Dashboard</div>
+
+    <div class="nlabel">Printing</div>
+    <div class="ni" data-s="print"><i class="fa-solid fa-print"></i> Print</div>
+    <div class="ni" data-s="queue"><i class="fa-solid fa-list-check"></i> Job Queue</div>
+
+    <div class="nlabel">Configuration</div>
+    <div class="ni" data-s="printers"><i class="fa-solid fa-server"></i> Printers</div>
+    <div class="ni" data-s="opts"><i class="fa-solid fa-sliders"></i> Printer Options</div>
+    <div class="ni" data-s="jobopts"><i class="fa-solid fa-gear"></i> Job Defaults</div>
+
+    <div class="nlabel">Diagnostics</div>
+    <div class="ni" data-s="ink"><i class="fa-solid fa-droplet"></i> Ink Levels</div>
+    <div class="ni" data-s="borderless"><i class="fa-solid fa-expand"></i> Borderless</div>
+    <div class="ni" data-s="maint"><i class="fa-solid fa-wrench"></i> Maintenance</div>
+
+    <div class="ndiv"></div>
+    <div class="ni" data-s="updates"><i class="fa-solid fa-rotate"></i> Updates</div>
+  </nav>
+
+  <div class="sfoot">
+    <span class="vbadge" id="vbadge">v__VERSION__</span>
+    <span class="dbadge" id="distro"></span>
+  </div>
+</aside>
+
+<!-- ══════════════ APP ════════════════════════════════════ -->
+<div id="app">
+  <div id="demo-bar">
+    <i class="fa-solid fa-flask-vial"></i>
+    Demo mode — run <code style="font-family:ui-monospace,monospace;background:rgba(0,0,0,.35);padding:1px 5px;border-radius:3px">python -m printease</code> to use live features.
+  </div>
+
+  <header id="hdr">
+    <span class="hcrumb" id="hcrumb">Dashboard</span>
+    <div class="hq-wrap">
+      <span class="tx ts">Queue:</span>
+      <select class="hqsel" id="gq" onchange="onQueueChange(this.value)">
+        <option>No queues</option>
+      </select>
+      <button class="btn btn-g btn-sm" onclick="loadStatus()" title="Rescan"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </header>
+
+  <div id="content">
+
+<!-- ══ DASHBOARD ══════════════════════════════════════════ -->
+<section id="sec-home" class="on">
+  <div class="sh"><h2>Dashboard</h2><p>Printer status, ink at a glance, and quick actions.</p></div>
+
+  <div class="g3">
+    <div class="sc-"><div class="sc-label">Printers detected</div><div class="sc-val" id="st-det">—</div><div class="sc-sub">USB + network</div></div>
+    <div class="sc-"><div class="sc-label">CUPS queues</div><div class="sc-val" id="st-q">—</div><div class="sc-sub">configured</div></div>
+    <div class="sc-"><div class="sc-label">CUPS daemon</div><div class="sc-val" id="st-cups" style="font-size:19px">—</div><div class="sc-sub" id="st-dist">—</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ctitle">Printers &amp; queues</div>
+      <div id="dash-printers"><div class="empty"><i class="fa-solid fa-print"></i><p>Scanning…</p></div></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Ink levels</div>
+      <div id="dash-ink"><div class="empty"><i class="fa-solid fa-droplet"></i><p>Select a queue to show ink.</p></div></div>
+    </div>
+  </div>
+
+  <div class="card card-sm">
+    <div class="ctitle">Quick actions</div>
+    <div class="row g8 mt2">
+      <button class="btn btn-g" onclick="nav('print')"><i class="fa-solid fa-print"></i> Print a file</button>
+      <button class="btn btn-g" onclick="testPrint('nozzle')"><i class="fa-solid fa-eye-dropper"></i> Nozzle check</button>
+      <button class="btn btn-g" onclick="testPrint('edge')"><i class="fa-solid fa-border-all"></i> Edge test</button>
+      <button class="btn btn-g" onclick="nav('updates')"><i class="fa-solid fa-cloud-arrow-down"></i> Sync profiles</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PRINT ══════════════════════════════════════════════ -->
+<section id="sec-print">
+  <div class="sh"><h2>Print</h2><p>Drop a file, configure settings, send to printer.</p></div>
+
+  <div class="dz" id="dz">
+    <input type="file" id="fi" accept=".pdf,.png,.jpg,.jpeg,.txt,.ps,.docx" onchange="onFile(this)">
+    <i class="dz-icon fa-solid fa-file-arrow-up" id="dz-icon"></i>
+    <div class="dz-t" id="dz-t">Drop a file here, or click to browse</div>
+    <div class="dz-s">PDF, PNG, JPEG, TXT, PostScript</div>
+    <div class="fn" id="dz-fn"></div>
+  </div>
+
+  <div class="g2">
+    <!-- Left: printer + paper -->
+    <div class="card">
+      <div class="ctitle">Printer &amp; paper</div>
+      <div class="field">
+        <div class="fl">Printer queue</div>
+        <select class="sel" id="pq" onchange="onPrintQChange(this.value)"><option>No queues</option></select>
+      </div>
+      <div class="field">
+        <div class="fl">Paper size</div>
+        <select class="sel" id="psz"></select>
+      </div>
+      <div class="field">
+        <div class="fl">Copies</div>
+        <div class="num-in"><button onclick="adj('cps',-1)">−</button><input type="number" id="cps" value="1" min="1" max="999"><button onclick="adj('cps',+1)">+</button></div>
+      </div>
+      <div class="field">
+        <div class="fl">Orientation</div>
+        <select class="sel" id="por">
+          <option value="">Automatic rotation</option>
+          <option value="portrait">Portrait</option>
+          <option value="landscape">Landscape</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="fl">Pages per side</div>
+        <select class="sel" id="ppps">
+          <option value="1">1</option><option value="2">2</option><option value="4">4</option>
+          <option value="6">6</option><option value="9">9</option><option value="16">16</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="fl">Two-sided (duplex)</div>
+        <select class="sel" id="pdup">
+          <option value="">Off — one sided</option>
+          <option value="DuplexNoTumble">Long-edge binding</option>
+          <option value="DuplexTumble">Short-edge (flip) binding</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Right: quality + toggles -->
+    <div class="card">
+      <div class="ctitle">Quality &amp; color</div>
+      <div class="field">
+        <div class="fl">Print quality / media type</div>
+        <select class="sel" id="pqual"></select>
+      </div>
+      <div class="field">
+        <div class="fl">Output resolution</div>
+        <select class="sel" id="pres"><option value="">Driver default</option></select>
+      </div>
+      <div class="sr">
+        <div class="sl-">Grayscale (black &amp; white)</div>
+        <label class="tog sc"><input type="checkbox" id="pgray"><span class="ttrack"></span></label>
+      </div>
+      <div class="sr">
+        <div class="sl-">Borderless printing<small id="bl-hint">checking driver…</small></div>
+        <label class="tog sc"><input type="checkbox" id="pbl" onchange="onBLToggle()"><span class="ttrack"></span></label>
+      </div>
+      <div class="sr">
+        <div class="sl-">Photo mode <span class="td tx">(high quality + photo paper)</span></div>
+        <label class="tog sc"><input type="checkbox" id="ppho"><span class="ttrack"></span></label>
+      </div>
+      <div class="sr">
+        <div class="sl-">Scale to fit page</div>
+        <label class="tog sc"><input type="checkbox" id="pscale"><span class="ttrack"></span></label>
+      </div>
+      <div class="sr">
+        <div class="sl-">Mirror (flip horizontally)</div>
+        <label class="tog sc"><input type="checkbox" id="pmirror"><span class="ttrack"></span></label>
+      </div>
+
+      <button class="ctog" onclick="ctog('adv')" id="adv-tog"><i class="fa-solid fa-chevron-right"></i> Advanced options</button>
+      <div class="cbody" id="adv">
+        <div class="field mt1">
+          <div class="fl">Output bin</div>
+          <select class="sel" id="pbin"><option value="face-up">Face-up</option><option value="face-down">Face-down</option></select>
+        </div>
+        <div class="field">
+          <div class="fl">Hold until</div>
+          <select class="sel" id="phold">
+            <option value="">No hold</option><option value="day-time">Day time</option>
+            <option value="evening">Evening</option><option value="night">Night</option>
+            <option value="weekend">Weekend</option><option value="indefinite">Hold for release</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="fl">Job priority</div>
+          <div class="sl-wrap"><input type="range" min="1" max="100" value="50" id="ppri" oninput="sv(this,'ppri-v')"><span class="sv" id="ppri-v">50</span></div>
+        </div>
+        <div class="field">
+          <div class="fl">Brightness</div>
+          <div class="sl-wrap"><input type="range" min="-100" max="100" value="0" id="pbright" oninput="sv(this,'pbright-v')"><span class="sv" id="pbright-v">0</span></div>
+        </div>
+        <div class="field">
+          <div class="fl">Contrast</div>
+          <div class="sl-wrap"><input type="range" min="-100" max="100" value="0" id="pcont" oninput="sv(this,'pcont-v')"><span class="sv" id="pcont-v">0</span></div>
+        </div>
+        <div class="field">
+          <div class="fl">Saturation</div>
+          <div class="sl-wrap"><input type="range" min="-100" max="100" value="0" id="psat" oninput="sv(this,'psat-v')"><span class="sv" id="psat-v">0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="print-btn" onclick="doPrint()" disabled>
+    <i class="fa-solid fa-print"></i> Print now
+  </button>
+</section>
+
+<!-- ══ JOB QUEUE ══════════════════════════════════════════ -->
+<section id="sec-queue">
+  <div class="sh"><h2>Job Queue</h2><p>Active, held, and recently completed jobs.</p></div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="qtbl">
+      <thead><tr><th>ID</th><th>File</th><th>Printer</th><th>Pages</th><th>Status</th><th></th></tr></thead>
+      <tbody id="qtbody"><tr><td colspan="6" style="text-align:center;padding:28px;color:var(--dim)">Queue is empty.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="row mt3 g8">
+    <button class="btn btn-g" onclick="loadQueue()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    <button class="btn btn-g" onclick="toast('Use the CUPS web interface at http://localhost:631 for full queue management.','info')"><i class="fa-solid fa-xmark"></i> Cancel all</button>
+    <span class="tx ts" style="margin-left:auto">Full queue management: <a href="http://localhost:631" target="_blank" style="color:var(--cy);text-decoration:none">localhost:631</a></span>
+  </div>
+</section>
+
+<!-- ══ PRINTERS ═══════════════════════════════════════════ -->
+<section id="sec-printers">
+  <div class="sh"><h2>Printers</h2><p>Hardware found on USB and network, plus configured CUPS queues.</p></div>
+
+  <div class="ctitle mb2">Detected hardware</div>
+  <div id="det-printers"><div class="empty"><i class="fa-solid fa-magnifying-glass"></i><p>Scanning USB and network…</p></div></div>
+
+  <div class="ctitle" style="margin:16px 0 8px">Configured CUPS queues</div>
+  <div id="cfg-queues"><div class="empty"><i class="fa-solid fa-server"></i><p>No queues configured yet. Set up a detected printer above.</p></div></div>
+
+  <div class="row mt3 g8">
+    <button class="btn btn-g" onclick="loadStatus()"><i class="fa-solid fa-rotate"></i> Rescan</button>
+  </div>
+</section>
+
+<!-- ══ PRINTER OPTIONS ════════════════════════════════════ -->
+<section id="sec-opts">
+  <div class="sh"><h2>Printer Options</h2><p>Live CUPS options for the active queue. These are the driver-level defaults.</p></div>
+  <div id="opts-con"><div class="empty"><i class="fa-solid fa-sliders"></i><p>Select a queue to load its options.</p></div></div>
+  <div class="row mt3 g8" id="opts-acts" style="display:none">
+    <button class="btn btn-p" onclick="saveOpts()"><i class="fa-solid fa-floppy-disk"></i> Save as queue defaults</button>
+    <button class="btn btn-g" onclick="loadOpts()"><i class="fa-solid fa-rotate"></i> Reload</button>
+  </div>
+</section>
+
+<!-- ══ JOB DEFAULTS ═══════════════════════════════════════ -->
+<section id="sec-jobopts">
+  <div class="sh"><h2>Job Defaults</h2><p>Default values added to every print job unless the application overrides them. Matches the CUPS Job Options panel.</p></div>
+
+  <div class="og">
+    <div class="ogh"><i class="fa-solid fa-layer-group"></i> Common Options</div>
+    <div class="or"><div class="on-">Copies</div><div class="oc"><div class="num-in"><button onclick="adj('jcps',-1)">−</button><input type="number" id="jcps" value="1" min="1"><button onclick="adj('jcps',+1)">+</button></div></div></div>
+    <div class="or"><div class="on-">Orientation</div><div class="oc"><select class="sel" id="jori"><option value="">Automatic rotation</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option><option value="reverse-portrait">Reverse portrait</option><option value="reverse-landscape">Reverse landscape</option></select></div></div>
+    <div class="or"><div class="on-">Pages per side</div><div class="oc"><select class="sel" id="jpps"><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="9">9</option><option value="16">16</option></select></div></div>
+    <div class="or"><div class="on-">Pages per side layout</div><div class="oc"><select class="sel" id="jppl"><option value="ltr-tb">Left to right, top to bottom</option><option value="rtl-tb">Right to left, top to bottom</option><option value="ttb-lr">Top to bottom, left to right</option><option value="btt-lr">Bottom to top, left to right</option></select></div></div>
+    <div class="or"><div class="on-">Sides (duplex)</div><div class="oc"><select class="sel" id="jsides"><option value="one-sided">One-sided</option><option value="two-sided-long-edge">Two-sided, long edge</option><option value="two-sided-short-edge">Two-sided, short edge</option></select></div></div>
+    <div class="or"><div class="on-">Output order</div><div class="oc"><select class="sel" id="jorder"><option value="normal">Normal</option><option value="reverse">Reverse</option></select></div></div>
+    <div class="or"><div class="on-">Hold until</div><div class="oc"><select class="sel" id="jhold"><option value="">No hold</option><option value="day-time">Day time</option><option value="evening">Evening</option><option value="night">Night</option><option value="weekend">Weekend</option><option value="indefinite">Indefinite</option></select></div></div>
+    <div class="or"><div class="on-">Finishings</div><div class="oc"><select class="sel" id="jfin"><option value="none">None</option><option value="staple">Staple</option><option value="punch">Punch</option><option value="cover">Cover</option><option value="bind">Bind</option></select></div></div>
+    <div class="or"><div class="on-">Job priority (1–100)</div><div class="oc" style="min-width:200px"><div class="sl-wrap"><input type="range" min="1" max="100" value="50" id="jpri" oninput="sv(this,'jpri-v')"><span class="sv" id="jpri-v">50</span></div></div></div>
+    <div class="or"><div class="on-">Printer resolution</div><div class="oc"><select class="sel" id="jpres"><option value="300x300dpi">300×300 dpi</option><option value="360dpi">360 dpi</option><option value="720dpi">720 dpi</option><option value="1440dpi">1440 dpi</option><option value="2880dpi">2880 dpi</option></select></div></div>
+    <div class="or"><div class="on-">Output bin</div><div class="oc"><select class="sel" id="jbin"><option value="face-up">Face-up</option><option value="face-down">Face-down</option></select></div></div>
+    <div class="or"><div class="on-">Job cancel after (seconds)</div><div class="oc"><input class="sel" id="jcancel" type="number" value="10800" min="0" style="width:110px"></div></div>
+  </div>
+
+  <div class="og">
+    <div class="ogh"><i class="fa-solid fa-image"></i> Image Options</div>
+    <div class="or"><div class="on-">Scaling</div><div class="oc" style="min-width:200px"><div class="sl-wrap"><input type="range" min="1" max="200" value="100" id="jscale" oninput="sv(this,'jscale-v','%')"><span class="sv" id="jscale-v">100%</span></div></div></div>
+    <div class="or"><div class="on-">Brightness</div><div class="oc" style="min-width:200px"><div class="sl-wrap"><input type="range" min="0" max="200" value="100" id="jbright" oninput="sv(this,'jbright-v','%')"><span class="sv" id="jbright-v">100%</span></div></div></div>
+    <div class="or"><div class="on-">Saturation</div><div class="oc" style="min-width:200px"><div class="sl-wrap"><input type="range" min="0" max="200" value="100" id="jsat" oninput="sv(this,'jsat-v','%')"><span class="sv" id="jsat-v">100%</span></div></div></div>
+    <div class="or"><div class="on-">Hue adjustment</div><div class="oc" style="min-width:200px"><div class="sl-wrap"><input type="range" min="-180" max="180" value="0" id="jhue" oninput="sv(this,'jhue-v','°')"><span class="sv" id="jhue-v">0°</span></div></div></div>
+    <div class="or"><div class="on-">Gamma</div><div class="oc"><input class="sel input-sm" id="jgamma" type="number" value="1000" min="1" max="3000" style="width:90px"></div></div>
+    <div class="or"><div class="on-">Mirror</div><div class="oc"><label class="tog"><input type="checkbox" id="jmirror"><span class="ttrack"></span></label></div></div>
+  </div>
+
+  <div class="og">
+    <div class="ogh"><i class="fa-solid fa-font"></i> Text Options</div>
+    <div class="or"><div class="on-">Characters per inch</div><div class="oc"><input class="sel input-sm" id="jcpi" type="number" value="10" step="0.1" style="width:90px"></div></div>
+    <div class="or"><div class="on-">Lines per inch</div><div class="oc"><input class="sel input-sm" id="jlpi" type="number" value="6" step="0.5" style="width:90px"></div></div>
+    <div class="or"><div class="on-">Left margin (points)</div><div class="oc"><input class="sel input-sm" id="jml" type="number" value="0" style="width:80px"></div></div>
+    <div class="or"><div class="on-">Right margin (points)</div><div class="oc"><input class="sel input-sm" id="jmr" type="number" value="0" style="width:80px"></div></div>
+    <div class="or"><div class="on-">Top margin (points)</div><div class="oc"><input class="sel input-sm" id="jmt" type="number" value="0" style="width:80px"></div></div>
+    <div class="or"><div class="on-">Bottom margin (points)</div><div class="oc"><input class="sel input-sm" id="jmb" type="number" value="0" style="width:80px"></div></div>
+    <div class="or"><div class="on-">Columns</div><div class="oc"><div class="num-in"><button onclick="adj('jcols',-1)">−</button><input type="number" id="jcols" value="1" min="1"><button onclick="adj('jcols',+1)">+</button></div></div></div>
+    <div class="or"><div class="on-">Pretty print</div><div class="oc"><label class="tog"><input type="checkbox" id="jpretty"><span class="ttrack"></span></label></div></div>
+    <div class="or"><div class="on-">Word wrap</div><div class="oc"><label class="tog"><input type="checkbox" id="jwrap"><span class="ttrack"></span></label></div></div>
+  </div>
+
+  <div class="row mt3 g8">
+    <button class="btn btn-p" onclick="toast('Job defaults saved — full lpadmin write in next release.','info')"><i class="fa-solid fa-floppy-disk"></i> Save defaults</button>
+    <button class="btn btn-g" onclick="resetJD()"><i class="fa-solid fa-arrow-rotate-left"></i> Reset to CUPS defaults</button>
+  </div>
+</section>
+
+<!-- ══ INK ═════════════════════════════════════════════════ -->
+<section id="sec-ink">
+  <div class="sh"><h2>Ink Levels</h2><p>Cartridge fill levels as reported by the printer driver. Not all drivers support this.</p></div>
+  <div class="ink-grid" id="ink-grid"><div class="empty" style="grid-column:1/-1"><i class="fa-solid fa-droplet"></i><p>Select a queue to load ink levels.</p></div></div>
+  <button class="btn btn-g mt3" onclick="loadInk()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+</section>
+
+<!-- ══ BORDERLESS ═════════════════════════════════════════ -->
+<section id="sec-borderless">
+  <div class="sh"><h2>Borderless Printing</h2><p>Test edge-to-edge output and probe sibling drivers for more borderless page sizes.</p></div>
+  <div class="card">
+    <div class="ctitle">Available borderless sizes in this driver</div>
+    <div id="bl-sizes"><span class="td tx">Select a queue first.</span></div>
+  </div>
+  <div class="card mt1">
+    <div class="ctitle">Sibling driver probe</div>
+    <p class="tx ts mb3">Some Epson models share ink systems. Sibling drivers may list borderless sizes yours doesn't. For the L3210 these include L3250, L3260, L3150, L4260, and others.</p>
+    <div class="row g8">
+      <button class="btn btn-g" onclick="probe(false)"><i class="fa-solid fa-magnifying-glass"></i> Probe siblings (read-only)</button>
+      <button class="btn btn-g" onclick="probe(true)"><i class="fa-solid fa-plus"></i> Probe + create queues</button>
+    </div>
+    <pre class="cod" id="probe-out" style="display:none"></pre>
+  </div>
+  <div class="card mt1">
+    <div class="ctitle">Test prints</div>
+    <div class="row g8">
+      <button class="btn btn-p" onclick="testPrint('edge')"><i class="fa-solid fa-border-all"></i> Print edge test</button>
+      <button class="btn btn-g" onclick="testPrint('nozzle')"><i class="fa-solid fa-line-columns"></i> Print nozzle pattern</button>
+    </div>
+    <p class="tx ts mt2">Edge test: gradient + frame + crosshair to judge bleed and colour accuracy. Nozzle: CMYK bars to detect clogged heads.</p>
+  </div>
+</section>
+
+<!-- ══ MAINTENANCE ════════════════════════════════════════ -->
+<section id="sec-maint">
+  <div class="sh"><h2>Maintenance</h2><p>Printer-specific steps and test prints from the loaded profile.</p></div>
+  <div class="g2 mb3">
+    <button class="btn btn-g" onclick="testPrint('nozzle')" style="justify-content:center;padding:11px"><i class="fa-solid fa-line-columns"></i> Print nozzle check pattern</button>
+    <button class="btn btn-g" onclick="testPrint('edge')" style="justify-content:center;padding:11px"><i class="fa-solid fa-border-all"></i> Print edge + bleed test</button>
+  </div>
+  <div class="card">
+    <div class="ctitle">Profile maintenance steps</div>
+    <div id="maint-steps"><div class="empty"><i class="fa-solid fa-wrench"></i><p>No maintenance steps for this profile.</p></div></div>
+  </div>
+  <div class="card mt1" id="maint-notes-card" style="display:none">
+    <div class="ctitle">Profile notes</div>
+    <div id="maint-notes" class="tx ts" style="line-height:1.75"></div>
+  </div>
+</section>
+
+<!-- ══ UPDATES ════════════════════════════════════════════ -->
+<section id="sec-updates">
+  <div class="sh"><h2>Updates</h2><p>Printer profiles sync from GitHub. App updates pull the latest code if installed via git.</p></div>
+  <div class="card">
+    <div class="ctitle">Profile database</div>
+    <p class="tx ts mb3">New printer profiles are added regularly. Syncing takes a few seconds and requires no restart.</p>
+    <button class="btn btn-p" onclick="syncProfiles()"><i class="fa-solid fa-cloud-arrow-down"></i> Sync profiles now</button>
+  </div>
+  <div class="card mt1">
+    <div class="ctitle">App update</div>
+    <p class="tx ts mb3">Only works for git installs (<code class="mono" style="background:var(--l2);padding:1px 5px;border-radius:3px">git clone</code>). Pulls latest via <code class="mono" style="background:var(--l2);padding:1px 5px;border-radius:3px">git pull</code>.</p>
+    <button class="btn btn-g" onclick="appUpdate()"><i class="fa-brands fa-github"></i> Pull latest from GitHub</button>
+  </div>
+  <div class="card mt1">
+    <div class="ctitle">Contribute your printer</div>
+    <p class="tx ts mb3">If your printer wasn't auto-recognised, generate a profile draft and open a GitHub issue — the next person gets it automatically.</p>
+    <button class="btn btn-g" onclick="contribute()"><i class="fa-solid fa-code-pull-request"></i> Open profile issue</button>
+  </div>
+  <div class="card mt1">
+    <div class="ctitle">Star on GitHub</div>
+    <p class="tx ts mb3">If PrintEase saves you a headache, a star helps others find it.</p>
+    <button class="btn btn-g" onclick="act('star')"><i class="fa-solid fa-star"></i> Star the repo</button>
+  </div>
+</section>
+
+  </div><!-- #content -->
+</div><!-- #app -->
+
+<div id="ts"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const TOKEN = "__TOKEN__";
+const DEMO  = TOKEN === "__" + "TOKEN__";
+
+const NAV_NAMES = {
+  home:'Dashboard',print:'Print',queue:'Job Queue',printers:'Printers',
+  opts:'Printer Options',jobopts:'Job Defaults',ink:'Ink Levels',
+  borderless:'Borderless',maint:'Maintenance',updates:'Updates'
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const S = { status:null, options:null, queue:'', file:null };
+
+// ═══════════════════════════════════════════════════════════
+//  MOCK DATA  (used in demo / artifact mode)
+// ═══════════════════════════════════════════════════════════
+const MOCK_STATUS = {
+  cups:true, distro:'pacman', version:'1.2.0',
+  printers:[{
+    uri:'usb://EPSON/L3210%20Series?serial=5841474E3831323982&interface=1',
+    vendor:'EPSON', model:'L3210 Series', transport:'usb', profile:'epson-l3210'
+  }],
+  queues:[
+    {name:'Epson_L3210_Borderless_Hack', uri:'usb://EPSON/L3210%20Series?serial=5841474E3831323982', default:true}
+  ]
+};
+
+const MOCK_OPTS = {
+  options:[
+    {key:'PageSize',   label:'Media Size', default:'A4',
+     choices:['A4','A4(Borderless)','10x15cm(4x6in)','10x15cm(4x6in)(Borderless)',
+              '13x18cm(5x7in)','13x18cm(5x7in)(Borderless)','A6','A5','JISB5','JISB6',
+              '9x13cm(3.5x5in)','9x13cm(3.5x5in)(Borderless)','5x8in(127x203mm)',
+              '20x25cm(8x10in)','20x25cm(8x10in)(Borderless)',
+              '16:9wide(4x7.11in)','16:9wide(4x7.11in)(Borderless)',
+              '100x148mm','100x148mm(Borderless)','EnvelopeNo10','EnvelopeDL',
+              'EnvelopeC6','Letter','Letter(Borderless)','Legal','16K195x270mm']},
+    {key:'MediaType',  label:'Print Quality', default:'Plain',
+     choices:['Plain','PlainHigh','Letterhead','LetterheadHigh','PhotoInkJet','PhotoInkJetHigh',
+              'Matte','MatteHigh','UltraGlossy','UltraGlossyHigh','PremiumGlossy',
+              'PremiumGlossyHigh','PremiumSemiGlossy','PremiumSemiGlossyHigh',
+              'PhotoGlossy','PhotoGlossyHigh','EnvelopePlain','Envelope']},
+    {key:'Duplex',     label:'Duplex Tumble', default:'None', choices:['None','DuplexNoTumble','DuplexTumble']},
+    {key:'Grayscale',  label:'Grayscale',     default:'No',   choices:['No','Yes']},
+    {key:'OutputRes',  label:'Resolution',    default:'360dpi',choices:['360dpi','720dpi','1440dpi','2880dpi','360x720dpi']},
+    {key:'Brightness', label:'Brightness',    default:'0',    choices:[]},
+    {key:'Contrast',   label:'Contrast',      default:'0',    choices:[]},
+    {key:'Saturation', label:'Saturation',    default:'0',    choices:[]},
+  ],
+  borderless:['A4(Borderless)','10x15cm(4x6in)(Borderless)','13x18cm(5x7in)(Borderless)',
+              '100x148mm(Borderless)','Letter(Borderless)','20x25cm(8x10in)(Borderless)'],
+  ink:[
+    {name:'Cyan',    level:68, color:'#22D3EE'},
+    {name:'Magenta', level:42, color:'#E879F9'},
+    {name:'Yellow',  level:15, color:'#FBBF24'},
+    {name:'Black',   level:83, color:'#94A3B8'},
+  ]
+};
+
+// ═══════════════════════════════════════════════════════════
+//  API
+// ═══════════════════════════════════════════════════════════
+async function api(path, opts = {}) {
+  if (DEMO) {
+    await new Promise(r => setTimeout(r, 120 + Math.random()*180));
+    return mockApi(path, opts);
+  }
+  const isPost = opts.body !== undefined;
+  const res = await fetch('/api/' + path, {
+    method: isPost ? 'POST' : 'GET',
+    headers: {'X-Token': TOKEN, ...(opts.headers || {})},
+    body: opts.body
+  });
+  return res.json();
+}
+
+function mockApi(path) {
+  const base = path.split('?')[0];
+  if (base === 'ping')        return {ok:true};
+  if (base === 'status')      return JSON.parse(JSON.stringify(MOCK_STATUS));
+  if (base === 'options')     return JSON.parse(JSON.stringify(MOCK_OPTS));
+  if (base === 'test')        return {ok:true, message:'Test print queued.', notes:[]};
+  if (base === 'sync')        return {ok:true, message:'3 profile(s) updated from GitHub.'};
+  if (base === 'update')      return {ok:true, message:'Already at latest commit.'};
+  if (base === 'star')        return {ok:true, message:'Thanks! Opening GitHub…'};
+  if (base === 'maintenance') return {ok:true, steps:[
+    {title:'Head cleaning',how:'Hold the ink (droplet) button on the printer for 3 seconds. Use sparingly — it consumes significant ink.'},
+    {title:'Nozzle check',  how:'Print the nozzle check pattern below. Gaps or missing colour bars mean a clean cycle is needed.'},
+    {title:'Ink refill',    how:'EcoTank: use only matching Epson bottle colour. Fill slowly to the max line, then press the ink button once.'},
+  ], notes:'Epson lists borderless for 4×6 on photo paper; A4 borderless may not appear in every driver version. The L3210 is an EcoTank — keep all tanks above 20% before running head cleaning.'};
+  if (base === 'setup')       return {ok:true, queue:'Epson_L3210_Borderless_Hack', driver:'epson-escpr2'};
+  if (base === 'probe')       return {report:[
+    {model:'L3250',  status:'borderless', borderless:['A4(Borderless)','10x15cm(4x6in)(Borderless)']},
+    {model:'L4260',  status:'borderless', borderless:['A4(Borderless)','Letter(Borderless)','10x15cm(4x6in)(Borderless)']},
+    {model:'L3110',  status:'none',       borderless:[]},
+    {model:'L1210',  driver:null,         status:'no driver installed', borderless:[]},
+  ]};
+  if (base === 'print')       return {ok:true, message:'Job sent. Spooling to Epson_L3210_Borderless_Hack.', notes:[]};
+  if (base === 'install-drivers') return {results:[{cmd:'pacman -S',ok:true,message:'Already installed.'}]};
+  if (base === 'contribute')  return {ok:true};
+  return {ok:false, message:'Unknown endpoint in demo mode: ' + path};
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function nav(id) {
+  document.querySelectorAll('.ni').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('#content section').forEach(e => e.classList.remove('on'));
+  const ni = document.querySelector(`.ni[data-s="${id}"]`);
+  const se = document.getElementById('sec-' + id);
+  if (ni) ni.classList.add('on');
+  if (se) se.classList.add('on');
+  document.getElementById('hcrumb').textContent = NAV_NAMES[id] || id;
+
+  if (id === 'ink')        loadInk();
+  if (id === 'opts')       loadOpts();
+  if (id === 'maint')      loadMaint();
+  if (id === 'queue')      loadQueue();
+  if (id === 'borderless' && S.options) renderBL();
+}
+
+document.querySelectorAll('.ni[data-s]').forEach(e => e.onclick = () => nav(e.dataset.s));
+
+// ═══════════════════════════════════════════════════════════
+//  LOAD STATUS
+// ═══════════════════════════════════════════════════════════
+async function loadStatus() {
+  try {
+    const d = await api('status');
+    S.status = d;
+
+    // Status dot
+    const dot = document.getElementById('sdot');
+    document.getElementById('stext').textContent = d.cups ? 'CUPS running' : 'CUPS not found';
+    dot.className = 'sdot ' + (d.cups ? 'ok' : 'er');
+
+    // Distro + version
+    document.getElementById('distro').textContent = d.distro || 'linux';
+    if (!DEMO) document.getElementById('vbadge').textContent = 'v' + (d.version || '?');
+
+    // Queue selects
+    const qHTML = d.queues.map(q =>
+      `<option value="${q.name}">${q.name}${q.default?' ✓':''}</option>`
+    ).join('') || '<option>No queues</option>';
+    ['gq','pq'].forEach(id => document.getElementById(id).innerHTML = qHTML);
+
+    if (d.queues.length) {
+      const def = d.queues.find(q => q.default) || d.queues[0];
+      S.queue = def.name;
+      await loadQueueOpts(def.name, true);
+    }
+
+    // Dashboard stats
+    document.getElementById('st-det').textContent   = d.printers.length;
+    document.getElementById('st-q').textContent     = d.queues.length;
+    document.getElementById('st-cups').textContent  = d.cups ? 'Running' : 'Offline';
+    document.getElementById('st-cups').style.color  = d.cups ? 'var(--ok)' : 'var(--er)';
+    document.getElementById('st-dist').textContent  = d.distro || 'unknown';
+
+    renderDashPrinters(d);
+    renderDetPrinters(d.printers);
+    renderCfgQueues(d.queues);
+  } catch(e) {
+    toast('Cannot connect to PrintEase server: ' + e.message, 'er');
+  }
+}
+
+async function onQueueChange(q, silent = false) {
+  S.queue = q;
+  document.getElementById('gq').value = q;
+  document.getElementById('pq').value = q;
+  if (!silent) await loadQueueOpts(q);
+}
+
+async function loadQueueOpts(q, silent = false) {
+  if (!q) return;
+  try {
+    const d = await api('options?queue=' + encodeURIComponent(q));
+    S.options = d;
+    populatePrintOpts(d);
+    renderInkMini(d.ink);
+    renderBL();
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashPrinters(d) {
+  const el = document.getElementById('dash-printers');
+  if (!d.printers.length && !d.queues.length) {
+    el.innerHTML = '<div class="empty"><i class="fa-solid fa-print"></i><p>No printers detected.</p></div>';
+    return;
+  }
+  el.innerHTML = d.queues.map(q => `
+    <div class="row" style="padding:7px 0;border-bottom:1px solid var(--rim)">
+      <i class="fa-solid fa-print tc" style="width:16px;text-align:center;font-size:12px"></i>
+      <span class="fw6" style="font-size:13px;flex:1">${q.name}</span>
+      ${q.default ? '<span class="b b-ok">default</span>' : ''}
+      <span class="b b-cy">idle</span>
+    </div>
+  `).join('') + (d.queues.length ? '' : d.printers.map(p => `
+    <div class="row" style="padding:7px 0;border-bottom:1px solid var(--rim)">
+      <i class="fa-solid fa-usb" style="width:16px;text-align:center;font-size:12px;color:var(--slate)"></i>
+      <span style="font-size:13px;flex:1">${p.vendor} ${p.model}</span>
+      <span class="b b-w">not configured</span>
+    </div>
+  `).join(''));
+}
+
+function renderInkMini(ink) {
+  if (!ink || !ink.length) return;
+  document.getElementById('dash-ink').innerHTML = ink.map(k => {
+    const lv = Math.max(0, k.level);
+    return `
+      <div class="row" style="padding:6px 0;border-bottom:1px solid var(--rim)">
+        <span class="tx fw6" style="width:58px;color:var(--slate)">${k.name}</span>
+        <div style="flex:1;height:5px;border-radius:3px;background:var(--l2);overflow:hidden">
+          <div style="height:100%;width:${lv}%;background:${k.color||'#22D3EE'};border-radius:3px"></div>
+        </div>
+        <span class="tx" style="font-family:ui-monospace,monospace;color:var(--slate);min-width:34px;text-align:right">${k.level<0?'?':lv+'%'}</span>
+        ${lv < 20 ? '<span class="b b-w" style="font-size:10px">Low</span>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PRINTERS
+// ═══════════════════════════════════════════════════════════
+function renderDetPrinters(printers) {
+  const el = document.getElementById('det-printers');
+  if (!printers.length) {
+    el.innerHTML = '<div class="empty"><i class="fa-solid fa-magnifying-glass"></i><p>No hardware found. Check cable and power, then rescan.</p></div>';
+    return;
+  }
+  el.innerHTML = printers.map((p, i) => `
+    <div class="pcard">
+      <div class="picon"><i class="fa-solid fa-print"></i></div>
+      <div class="pinfo">
+        <div class="pname">${p.vendor} ${p.model}</div>
+        <div class="puri">${decodeURIComponent(p.uri)}</div>
+        <div class="row g6">
+          <span class="b ${p.transport==='usb'?'b-cy':'b-mg'}">${p.transport}</span>
+          <span class="b b-ok">profile: ${p.profile}</span>
+        </div>
+      </div>
+      <div class="pacts">
+        <button class="btn btn-g btn-sm" onclick="installDrv(${i})"><i class="fa-solid fa-box-open"></i> Drivers</button>
+        <button class="btn btn-p btn-sm" onclick="setupPrinter(${i})"><i class="fa-solid fa-plus"></i> Set up</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCfgQueues(queues) {
+  const el = document.getElementById('cfg-queues');
+  if (!queues.length) {
+    el.innerHTML = '<div class="empty"><i class="fa-solid fa-server"></i><p>No CUPS queues yet. Set up a printer above.</p></div>';
+    return;
+  }
+  el.innerHTML = queues.map(q => `
+    <div class="pcard">
+      <div class="picon"><i class="fa-solid fa-server"></i></div>
+      <div class="pinfo">
+        <div class="pname">${q.name}</div>
+        <div class="puri">${q.uri || '—'}</div>
+        <div class="row g6">${q.default ? '<span class="b b-ok">default queue</span>' : '<span class="b b-cy">queue</span>'}</div>
+      </div>
+      <div class="pacts">
+        <button class="btn btn-g btn-sm" onclick="onQueueChange('${q.name}')"><i class="fa-solid fa-sliders"></i> Options</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function setupPrinter(i) {
+  const p = S.status.printers[i];
+  toast('Setting up printer…', 'info');
+  const r = await api('setup', {body: JSON.stringify({uri:p.uri, profile:p.profile}), headers:{'Content-Type':'application/json'}});
+  toast(r.ok ? `Queue "${r.queue}" created with driver: ${r.driver}` : r.message, r.ok ? 'ok' : 'er');
+  if (r.ok) loadStatus();
+}
+
+async function installDrv(i) {
+  const p = S.status.printers[i];
+  toast('Installing drivers… a password prompt may appear.', 'info');
+  const r = await api('install-drivers', {body: JSON.stringify({profile:p.profile}), headers:{'Content-Type':'application/json'}});
+  const ok = r.results.every(x => x.ok);
+  toast(r.results.map(x => (x.ok?'✓ ':'✗ ') + x.cmd + (x.message?' — '+x.message.slice(-100):'')).join('\n'), ok?'ok':'er');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PRINTER OPTIONS (live from CUPS)
+// ═══════════════════════════════════════════════════════════
+async function loadOpts() {
+  if (!S.queue) {
+    document.getElementById('opts-con').innerHTML = '<div class="empty"><i class="fa-solid fa-sliders"></i><p>No queue selected.</p></div>';
+    return;
+  }
+  document.getElementById('opts-con').innerHTML = '<div style="padding:24px;text-align:center"><div class="spin"></div></div>';
+  const d = S.options || await api('options?queue=' + encodeURIComponent(S.queue));
+  if (d) { S.options = d; renderCupsOpts(d.options); document.getElementById('opts-acts').style.display='flex'; }
+}
+
+function renderCupsOpts(opts) {
+  if (!opts || !opts.length) {
+    document.getElementById('opts-con').innerHTML = '<div class="empty"><i class="fa-solid fa-circle-xmark"></i><p>No CUPS options returned for this queue.</p></div>';
+    return;
+  }
+  const G = {General:['pagesize','mediatype','print-quality','duplex','grayscale','colormodel','outputres'],
+              Adjustments:['brightness','contrast','saturation','gamma','hue'],Other:[]};
+  const grouped = {};
+  for (const opt of opts) {
+    let placed = false;
+    for (const [g, keys] of Object.entries(G)) {
+      if (keys.some(k => opt.key.toLowerCase().includes(k))) {
+        (grouped[g] = grouped[g]||[]).push(opt); placed = true; break;
+      }
+    }
+    if (!placed) (grouped.Other = grouped.Other||[]).push(opt);
+  }
+  const icons = {General:'fa-layer-group',Adjustments:'fa-sliders',Other:'fa-gear'};
+  let html = '';
+  for (const [g, gopts] of Object.entries(grouped)) {
+    if (!gopts || !gopts.length) continue;
+    html += `<div class="og"><div class="ogh"><i class="fa-solid ${icons[g]||'fa-gear'}"></i> ${g}</div><div>`;
+    for (const opt of gopts) html += renderOptRow(opt);
+    html += '</div></div>';
+  }
+  document.getElementById('opts-con').innerHTML = html;
+  document.querySelectorAll('#opts-con input[type=range]').forEach(el => {
+    el.oninput = () => { const v = document.getElementById(el.id+'-v'); if (v) v.textContent = el.value; };
+  });
+}
+
+function renderOptRow(opt) {
+  const id = 'copt-' + opt.key.replace(/[^a-zA-Z0-9]/g,'-');
+  if (!opt.choices.length) {
+    return `<div class="or"><div class="on-">${opt.label}</div><div class="oc" style="min-width:200px">
+      <div class="sl-wrap"><input type="range" id="${id}" min="-100" max="100" value="${parseInt(opt.default)||0}">
+      <span class="sv" id="${id}-v">${opt.default||0}</span></div></div></div>`;
+  }
+  if (opt.choices.length === 2) {
+    const low = opt.choices.map(c=>c.toLowerCase());
+    if (low.includes('yes') && low.includes('no') || low.includes('on') && low.includes('off')) {
+      const checked = ['yes','on','true'].includes(opt.default.toLowerCase());
+      return `<div class="or"><div class="on-">${opt.label}</div><div class="oc">
+        <label class="tog"><input type="checkbox" id="${id}" ${checked?'checked':''}><span class="ttrack"></span></label></div></div>`;
+    }
+  }
+  const sopts = opt.choices.map(c => `<option value="${c}" ${c===opt.default?'selected':''}>${c}</option>`).join('');
+  return `<div class="or"><div class="on-">${opt.label}</div><div class="oc">
+    <select class="sel" id="${id}" style="font-size:12.5px;padding:5px 8px">${sopts}</select></div></div>`;
+}
+
+function saveOpts() { toast('Printer options saved. (Full lpadmin write in next release)', 'info'); }
+
+// ═══════════════════════════════════════════════════════════
+//  PRINT — populate selects
+// ═══════════════════════════════════════════════════════════
+const SZ_MAP = {
+  'A4':'A4 (210 × 297 mm)','A4(Borderless)':'A4 Borderless',
+  'Letter':'US Letter (216 × 279 mm)','Letter(Borderless)':'US Letter Borderless',
+  'Legal':'US Legal (216 × 356 mm)','A5':'A5 (148 × 210 mm)','A6':'A6 (105 × 148 mm)',
+  '10x15cm(4x6in)':'10 × 15 cm (4 × 6 in)','10x15cm(4x6in)(Borderless)':'10 × 15 cm Borderless',
+  '13x18cm(5x7in)':'13 × 18 cm (5 × 7 in)','13x18cm(5x7in)(Borderless)':'13 × 18 cm Borderless',
+  '20x25cm(8x10in)':'20 × 25 cm (8 × 10 in)','20x25cm(8x10in)(Borderless)':'20 × 25 cm Borderless',
+  '100x148mm':'100 × 148 mm (Postcard)','100x148mm(Borderless)':'100 × 148 mm Borderless',
+  'EnvelopeNo10':'Envelope #10','EnvelopeDL':'Envelope DL','EnvelopeC6':'Envelope C6',
+  '16:9wide(4x7.11in)':'16:9 Wide (4 × 7.11 in)','16:9wide(4x7.11in)(Borderless)':'16:9 Wide Borderless',
+  'JISB5':'JIS B5','JISB6':'JIS B6','5x8in(127x203mm)':'5 × 8 in (127 × 203 mm)',
+  '9x13cm(3.5x5in)':'9 × 13 cm (3.5 × 5 in)','9x13cm(3.5x5in)(Borderless)':'9 × 13 cm Borderless',
+  '16K195x270mm':'16K (195 × 270 mm)'
+};
+
+const QY_MAP = {
+  'Plain':'Plain paper — Standard','PlainHigh':'Plain paper — High',
+  'Letterhead':'Letterhead — Standard','LetterheadHigh':'Letterhead — High',
+  'PhotoInkJet':'Photo Quality Ink Jet — Standard','PhotoInkJetHigh':'Photo Quality Ink Jet — High',
+  'Matte':'Epson Matte — Standard','MatteHigh':'Epson Matte — High',
+  'UltraGlossy':'Ultra Glossy — Standard','UltraGlossyHigh':'Ultra Glossy (Photo RPM)',
+  'PremiumGlossy':'Premium Glossy — Standard','PremiumGlossyHigh':'Premium Glossy — High',
+  'PremiumSemiGlossy':'Premium Semi-Gloss — Standard','PremiumSemiGlossyHigh':'Premium Semi-Gloss — High',
+  'PhotoGlossy':'Photo Paper Glossy — Standard','PhotoGlossyHigh':'Photo Paper Glossy — High',
+  'EnvelopePlain':'Envelope — Standard','Envelope':'Envelope — High',
+};
+
+function populatePrintOpts(d) {
+  if (!d) return;
+  const opts = d.options || [];
+
+  // Page sizes
+  const psOpt = opts.find(o => o.key === 'PageSize');
+  if (psOpt) {
+    document.getElementById('psz').innerHTML = psOpt.choices
+      .map(c => `<option value="${c}" ${c===psOpt.default?'selected':''}>${SZ_MAP[c]||c}</option>`)
+      .join('');
+  }
+
+  // Quality
+  const mqOpt = opts.find(o => o.key === 'MediaType');
+  if (mqOpt) {
+    document.getElementById('pqual').innerHTML = mqOpt.choices
+      .map(c => `<option value="${c}" ${c===mqOpt.default?'selected':''}>${QY_MAP[c]||c}</option>`)
+      .join('');
+  }
+
+  // Resolution
+  const resOpt = opts.find(o => o.key.toLowerCase().includes('res') || o.key.toLowerCase().includes('resolution'));
+  if (resOpt && resOpt.choices.length) {
+    document.getElementById('pres').innerHTML = resOpt.choices
+      .map(c => `<option value="${c}" ${c===resOpt.default?'selected':''}>${c}</option>`).join('');
+  }
+
+  // Borderless hint
+  const bl = d.borderless || [];
+  document.getElementById('bl-hint').textContent = bl.length
+    ? `${bl.length} borderless sizes in this driver`
+    : 'No borderless sizes found in this driver';
+
+  updatePrintBtn();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PRINT — drag drop + send
+// ═══════════════════════════════════════════════════════════
+function onFile(input) {
+  const f = input.files[0];
+  if (!f) return;
+  S.file = f;
+  const dz = document.getElementById('dz');
+  dz.classList.add('has');
+  document.getElementById('dz-icon').className = 'dz-icon fa-solid fa-file-check';
+  document.getElementById('dz-t').textContent = 'File ready';
+  const fn = document.getElementById('dz-fn');
+  fn.textContent = f.name;
+  fn.style.display = 'block';
+  updatePrintBtn();
+}
+
+(function setupDrop() {
+  const dz = document.getElementById('dz');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) { S.file = f; dz.classList.add('has');
+      document.getElementById('dz-icon').className = 'dz-icon fa-solid fa-file-check';
+      document.getElementById('dz-t').textContent = 'File ready';
+      const fn = document.getElementById('dz-fn'); fn.textContent = f.name; fn.style.display = 'block';
+      updatePrintBtn(); }
+  });
+})();
+
+function updatePrintBtn() {
+  const hasFile = !!S.file;
+  const hasQ = document.getElementById('pq').value && document.getElementById('pq').value !== 'No queues';
+  document.getElementById('print-btn').disabled = !(hasFile && hasQ);
+}
+
+function onPrintQChange(q) {
+  S.queue = q;
+  document.getElementById('gq').value = q;
+  loadQueueOpts(q);
+  updatePrintBtn();
+}
+
+function onBLToggle() {
+  const on = document.getElementById('pbl').checked;
+  toast(on
+    ? 'Borderless enabled — paper must match a borderless size exactly.'
+    : 'Borderless off.', 'info');
+}
+
+async function doPrint() {
+  if (!S.file) return toast('Select a file first.', 'er');
+  const q = document.getElementById('pq').value;
+  if (!q || q === 'No queues') return toast('No queue selected.', 'er');
+
+  const btn = document.getElementById('print-btn');
+  btn.disabled = true;
+  btn.classList.add('printing');
+  btn.innerHTML = '<div class="spin"></div> Sending to printer…';
+
+  const size = document.getElementById('psz').value;
+  const copies = document.getElementById('cps').value;
+  const bl = document.getElementById('pbl').checked ? 1 : 0;
+  const photo = document.getElementById('ppho').checked ? 1 : 0;
+  const qs = new URLSearchParams({queue:q, size, copies, borderless:bl, photo});
+
+  try {
+    const r = await api('print?' + qs, {
+      body: await S.file.arrayBuffer(),
+      headers: {'X-Filename': encodeURIComponent(S.file.name), 'Content-Type': 'application/octet-stream'}
+    });
+    toast(r.ok ? (r.message || 'Job sent.') : (r.message || 'Print failed.'), r.ok ? 'ok' : 'er');
+    if (r.notes && r.notes.length) toast(r.notes.join('\n'), 'info');
+  } catch(e) {
+    toast('Print error: ' + e.message, 'er');
+  }
+
+  btn.classList.remove('printing');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-print"></i> Print now';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INK LEVELS
+// ═══════════════════════════════════════════════════════════
+async function loadInk() {
+  if (!S.queue) return;
+  const d = S.options || await api('options?queue=' + encodeURIComponent(S.queue));
+  if (d) { S.options = d; renderInkFull(d.ink); renderInkMini(d.ink); }
+}
+
+function renderInkFull(ink) {
+  const el = document.getElementById('ink-grid');
+  if (!ink || !ink.length) {
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="fa-solid fa-circle-xmark"></i><p>This printer does not report ink levels via CUPS.</p></div>';
+    return;
+  }
+  el.innerHTML = ink.map(k => {
+    const lv = Math.max(0, k.level);
+    const low = lv < 20;
+    return `
+      <div class="ik">
+        <div class="ik-h"><span class="ik-n">${k.name}</span>${low ? '<span class="b b-w" style="font-size:10px">Low</span>' : ''}</div>
+        <div class="ik-pct" style="color:${k.color||'var(--cy)'}">${k.level<0?'?':lv+'%'}</div>
+        <div class="ik-bar"><div class="ik-fill" style="width:${lv}%;background:${k.color||'var(--cy)'}"></div></div>
+        <div class="ik-sub">${lv>=80?'Full':lv>=50?'Good':lv>=20?'Getting low':'Replace soon'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BORDERLESS
+// ═══════════════════════════════════════════════════════════
+function renderBL() {
+  const d = S.options;
+  if (!d) return;
+  const bl = d.borderless || [];
+  document.getElementById('bl-sizes').innerHTML = bl.length
+    ? bl.map(s => `<span class="b b-mg" style="margin:3px 2px">${SZ_MAP[s]||s}</span>`).join('')
+    : '<span class="td tx">No borderless sizes found in this driver.</span>';
+}
+
+async function probe(create) {
+  const p = S.status && S.status.printers[0];
+  if (!p) return toast('No printer detected.', 'er');
+  const pre = document.getElementById('probe-out');
+  pre.style.display = 'block';
+  pre.textContent = 'Probing sibling drivers…';
+  const r = await api('probe', {
+    body: JSON.stringify({profile:p.profile, uri:p.uri, create, queue:S.queue}),
+    headers:{'Content-Type':'application/json'}
+  });
+  if (r.report) {
+    pre.textContent = r.report.map(x =>
+      `${x.model.padEnd(10)} ${x.status}${x.borderless&&x.borderless.length?' → '+x.borderless.join(', '):''}${x.queue?' [queue: '+x.queue+']':''}`
+    ).join('\n');
+  } else {
+    pre.textContent = r.message || 'No results.';
+  }
+  if (create) loadStatus();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TEST PRINT
+// ═══════════════════════════════════════════════════════════
+async function testPrint(kind) {
+  if (!S.queue) return toast('No queue selected.', 'er');
+  toast(`Sending ${kind} test to "${S.queue}"…`, 'info');
+  const r = await api(`test?queue=${encodeURIComponent(S.queue)}&kind=${kind}`, {body:'{}'});
+  toast(r.message || (r.ok ? 'Test sent.' : 'Failed.'), r.ok ? 'ok' : 'er');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MAINTENANCE
+// ═══════════════════════════════════════════════════════════
+async function loadMaint() {
+  const p = S.status && S.status.printers[0];
+  if (!p) return;
+  const r = await api('maintenance', {body: JSON.stringify({profile:p.profile}), headers:{'Content-Type':'application/json'}});
+  const el = document.getElementById('maint-steps');
+  if (r.steps && r.steps.length) {
+    el.innerHTML = r.steps.map((s, i) => `
+      <div class="step">
+        <div class="step-n">${i+1}</div>
+        <div><div class="step-tt">${s.title}</div><div class="step-hw">${s.how}</div></div>
+      </div>
+    `).join('');
+  } else {
+    el.innerHTML = '<div class="empty"><i class="fa-solid fa-circle-check tx-ok"></i><p>No maintenance steps for this profile.</p></div>';
+  }
+  if (r.notes) {
+    document.getElementById('maint-notes-card').style.display = 'block';
+    document.getElementById('maint-notes').textContent = r.notes;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  JOB QUEUE
+// ═══════════════════════════════════════════════════════════
+async function loadQueue() {
+  if (DEMO) {
+    document.getElementById('qtbody').innerHTML = `
+      <tr><td class="jid">#1234</td><td>document.pdf</td><td>${S.queue||'L3210'}</td><td>2</td><td><span class="b b-ok">Completed</span></td><td></td></tr>
+      <tr><td class="jid">#1235</td><td>photo-print.jpg</td><td>${S.queue||'L3210'}</td><td>1</td><td><span class="b b-w">Pending</span></td>
+        <td><button class="btn btn-d btn-sm" onclick="toast('Job cancelled.','ok')"><i class="fa-solid fa-xmark"></i></button></td></tr>
+    `;
+    return;
+  }
+  document.getElementById('qtbody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--dim)">Queue management via API coming in next release. Full control at <a href="http://localhost:631" target="_blank" style="color:var(--cy);text-decoration:none">localhost:631</a></td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UPDATES
+// ═══════════════════════════════════════════════════════════
+async function syncProfiles() {
+  toast('Syncing profiles from GitHub…', 'info');
+  const r = await api('sync', {body:'{}'});
+  toast(r.message || (r.ok ? 'Synced.' : 'Sync failed.'), r.ok ? 'ok' : 'er');
+}
+
+async function appUpdate() {
+  toast('Checking for updates…', 'info');
+  const r = await api('update', {body:'{}'});
+  toast(r.message || 'Done.', r.ok ? 'ok' : 'er');
+}
+
+async function contribute() {
+  const p = S.status && S.status.printers[0];
+  if (!p) return toast('No printer detected.', 'er');
+  await api('contribute', {body: JSON.stringify({printer:p}), headers:{'Content-Type':'application/json'}});
+  toast('Opening GitHub issue template…', 'ok');
+}
+
+async function act(action) {
+  toast('Working…', 'info');
+  const r = await api(action, {body:'{}'});
+  toast(r.message || 'Done.', r.ok !== false ? 'ok' : 'er');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function adj(id, d) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = Math.max(parseInt(el.min)||1, parseInt(el.value||0) + d);
+}
+
+function sv(el, valId, suffix = '') {
+  const v = document.getElementById(valId);
+  if (v) v.textContent = el.value + suffix;
+}
+
+function ctog(id) {
+  const body = document.getElementById(id);
+  const btn  = document.getElementById(id + '-tog');
+  body.classList.toggle('open');
+  if (btn) btn.classList.toggle('open');
+}
+
+function resetJD() {
+  ['jcps','jcols'].forEach(id => { const e = document.getElementById(id); if(e) e.value = 1; });
+  ['jmirror','jpretty','jwrap'].forEach(id => { const e = document.getElementById(id); if(e) e.checked = false; });
+  ['jscale','jbright','jsat'].forEach(id => {
+    const e = document.getElementById(id); if(!e) return;
+    e.value = 100; const v = document.getElementById(id+'-v'); if(v) v.textContent='100%';
+  });
+  ['jhue'].forEach(id => { const e = document.getElementById(id); if(!e) return; e.value=0; const v=document.getElementById(id+'-v'); if(v) v.textContent='0°'; });
+  toast('Job defaults reset to CUPS values.', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const stack = document.getElementById('ts');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  stack.prepend(el);
+  setTimeout(() => {
+    el.style.cssText += 'opacity:0;transform:translateX(16px);transition:all .28s';
+    setTimeout(() => el.remove(), 300);
+  }, 4200);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+if (DEMO) document.getElementById('demo-bar').style.display = 'flex';
+
+loadStatus();
+setInterval(() => api('ping').catch(() => {}), 9000);
+</script>
+</body>
+</html>
