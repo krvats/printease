@@ -1,29 +1,15 @@
 {
   "id": "generic",
-  "name": "Generic CUPS printer",
-  "match": [
-    ".*"
-  ],
-  "driver_hints": [],
+  "name": "Generic / IPP Everywhere",
+  "match": [".*"],
+  "driver_hints": ["everywhere", "driverless"],
   "packages": {
-    "pacman": [
-      "cups",
-      "cups-filters",
-      "ghostscript"
-    ],
-    "apt": [
-      "cups",
-      "cups-filters",
-      "ghostscript"
-    ],
-    "dnf": [
-      "cups",
-      "ghostscript"
-    ],
-    "zypper": [
-      "cups",
-      "ghostscript"
-    ]
+    "pacman": ["cups", "cups-filters", "ghostscript", "avahi", "nss-mdns"],
+    "apt":    ["cups", "cups-filters", "ghostscript", "avahi-daemon", "avahi-utils"],
+    "dnf":    ["cups", "cups-filters", "ghostscript", "avahi"],
+    "zypper": ["cups", "cups-filters", "ghostscript", "avahi"],
+    "xbps":   ["cups", "cups-filters", "ghostscript", "avahi"],
+    "apk":    ["cups", "cups-filters", "ghostscript", "avahi"]
   },
   "maintenance": []
 }
