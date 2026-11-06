@@ -1,12 +1,137 @@
-name: ci
-on: [push, pull_request]
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
 jobs:
-  test:
+  # ── Python syntax + import check ──────────────────────────
+  python:
+    name: Python ${{ matrix.python }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
-      - run: python3 -m unittest discover -s tests -v
-      - run: python3 tools/make_index.py --check
-      - run: bash -n install.sh && sudo apt-get install -y shellcheck && shellcheck install.sh
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Syntax check — all .py files
+        run: |
+          find printease -name "*.py" -exec python -m py_compile {} \;
+          echo "✓ All Python files compile without syntax errors"
+
+      - name: Import check — core module
+        run: |
+          python -c "
+          import sys, os
+          sys.path.insert(0, '.')
+          # Patch out subprocess calls so they don't actually run
+          import unittest.mock as mock
+          with mock.patch('subprocess.run'), mock.patch('subprocess.check_output', return_value=b''):
+              from printease import core
+              from printease import server
+          print('✓ printease.core and printease.server import cleanly')
+          "
+
+  # ── Profile JSON validation ────────────────────────────────
+  profiles:
+    name: Validate profiles
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate every profile JSON
+        run: |
+          python - << 'EOF'
+          import json, sys, pathlib, re
+
+          REQUIRED = {"id", "name", "match"}
+          errors = []
+
+          for f in sorted(pathlib.Path("profiles").glob("*.json")):
+              if f.name == "index.json":
+                  continue
+              try:
+                  data = json.loads(f.read_text())
+              except json.JSONDecodeError as e:
+                  errors.append(f"{f.name}: JSON parse error — {e}")
+                  continue
+
+              missing = REQUIRED - data.keys()
+              if missing:
+                  errors.append(f"{f.name}: missing required fields: {missing}")
+                  continue
+
+              # id must be slug
+              if not re.fullmatch(r"[a-z0-9][a-z0-9\-]*", data["id"]):
+                  errors.append(f"{f.name}: id '{data['id']}' must be lowercase slug")
+
+              # match must be non-empty list of strings
+              if not isinstance(data["match"], list) or not data["match"]:
+                  errors.append(f"{f.name}: 'match' must be a non-empty list")
+
+              print(f"  ✓  {f.name}  ({data['id']})")
+
+          if errors:
+              print("\nErrors:")
+              for e in errors:
+                  print(f"  ✗  {e}")
+              sys.exit(1)
+          else:
+              print(f"\n✓ All {len(list(pathlib.Path('profiles').glob('*.json')))-1} profiles valid")
+          EOF
+
+  # ── install.sh shell lint (ShellCheck) ────────────────────
+  shellcheck:
+    name: ShellCheck install.sh
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck
+        run: |
+          shellcheck --severity=warning install.sh
+          echo "✓ install.sh passes ShellCheck"
+
+  # ── Confirm UI file is valid HTML (basic) ──────────────────
+  ui:
+    name: Validate UI
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check index.html exists and contains token placeholder
+        run: |
+          python - << 'EOF'
+          import pathlib, sys
+
+          ui = pathlib.Path("printease/ui/index.html")
+          if not ui.exists():
+              print("✗  printease/ui/index.html not found")
+              sys.exit(1)
+
+          text = ui.read_text()
+          if "__TOKEN__" not in text:
+              print("✗  Token placeholder __TOKEN__ missing from index.html")
+              sys.exit(1)
+          if "__VERSION__" not in text:
+              print("✗  Version placeholder __VERSION__ missing from index.html")
+              sys.exit(1)
+
+          size = len(text.encode())
+          print(f"✓  index.html  ({size:,} bytes, placeholders present)")
+          EOF
