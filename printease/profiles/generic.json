@@ -1,0 +1,29 @@
+{
+  "id": "generic",
+  "name": "Generic CUPS printer",
+  "match": [
+    ".*"
+  ],
+  "driver_hints": [],
+  "packages": {
+    "pacman": [
+      "cups",
+      "cups-filters",
+      "ghostscript"
+    ],
+    "apt": [
+      "cups",
+      "cups-filters",
+      "ghostscript"
+    ],
+    "dnf": [
+      "cups",
+      "ghostscript"
+    ],
+    "zypper": [
+      "cups",
+      "ghostscript"
+    ]
+  },
+  "maintenance": []
+}

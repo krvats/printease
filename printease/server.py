@@ -1,15 +1,16 @@
-"""PrintEase — HTTP server and API dispatcher."""
+"""PrintEase — HTTP server and API dispatcher (v2 fixed)."""
 from __future__ import annotations
 
 import json
 import os
 import pathlib
 import secrets
+import tempfile
 import threading
 import time
+import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
 
 from . import __version__
 from .core import (
@@ -22,67 +23,60 @@ from .core import (
     queue_options   as get_options,
     list_drivers,
     list_jobs,
+    learn_draft,
+    issue_url,
     queues          as list_queues,
     package_commands,
+    make_test_png,
+    print_file,
+    probe_siblings,
     remove_queue,
     run_priv,
+    self_update,
     set_defaults,
     setup_queue,
+    slug,
+    sync_profiles,
 )
 
-def get_papersize(queue):
-    """Return the default papersize for a queue (best-effort)."""
-    import subprocess
-    try:
-        out = subprocess.check_output(
-            ["lpoptions", "-p", queue, "-l"], text=True, timeout=5, stderr=subprocess.DEVNULL
-        )
-        for line in out.splitlines():
-            if line.lower().startswith("pagesize") or line.lower().startswith("media"):
-                # find the *selected* value (marked with *)
-                for token in line.split():
-                    if token.startswith("*"):
-                        return token.lstrip("*")
-    except Exception:
-        pass
-    return "A4"
+_HERE   = pathlib.Path(__file__).parent
+_UI     = _HERE / "ui" / "index.html"
+_TOKEN  = secrets.token_hex(32)
+_HOST   = "127.0.0.1"
+_PORT   = int(os.environ.get("PRINTEASE_PORT", 8765))
 
-_HERE = pathlib.Path(__file__).parent
-_UI   = _HERE / "ui" / "index.html"
-_TOKEN = secrets.token_hex(32)
-_HOST  = "127.0.0.1"
-_PORT  = 8765
+# Allowed upload extensions (never execute anything)
+_UPLOAD_EXTS = {".pdf", ".png", ".jpg", ".jpeg", ".ps", ".txt", ".svg", ".pcl"}
 
-
-# ── helpers ─────────────────────────────────────────────────────────────────
+# ── helpers ──────────────────────────────────────────────────────────────────
 
 def _json(obj, status=200):
     body = json.dumps(obj, default=str).encode()
     return status, body, "application/json"
 
-
 def _ok(**kw):
     return _json({"ok": True, **kw})
 
-
 def _err(msg, status=400):
-    return _json({"ok": False, "error": msg}, status)
+    return _json({"ok": False, "error": str(msg)}, status)
 
+def _body_json(handler):
+    n = int(handler.headers.get("Content-Length", 0))
+    return json.loads(handler.rfile.read(n)) if n else {}
 
-def _read_body(handler):
-    length = int(handler.headers.get("Content-Length", 0))
-    return json.loads(handler.rfile.read(length)) if length else {}
+def _body_raw(handler):
+    n = int(handler.headers.get("Content-Length", 0))
+    return handler.rfile.read(n) if n else b""
 
 
 # ── request handler ──────────────────────────────────────────────────────────
 
 class _Handler(BaseHTTPRequestHandler):
 
-    def log_message(self, fmt, *args):  # silence default access log
-        pass
+    def log_message(self, fmt, *args):
+        pass   # silence default access log
 
     def _guard(self):
-        """Return True if request passes security checks."""
         host = self.headers.get("Host", "").split(":")[0]
         if host not in ("127.0.0.1", "localhost", "[::1]"):
             self._send(403, b"Forbidden", "text/plain")
@@ -99,6 +93,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Cache-Control", "no-store")
+        self.send_header("Access-Control-Allow-Origin", "null")
         self.end_headers()
         self.wfile.write(body)
 
@@ -108,263 +103,345 @@ class _Handler(BaseHTTPRequestHandler):
     # ── GET ──────────────────────────────────────────────────────────────────
 
     def do_GET(self):
-        parsed = urlparse(self.path)
+        parsed = urllib.parse.urlparse(self.path)
         path   = parsed.path
 
+        # Serve the UI (token + version injected)
         if path == "/":
             html = _UI.read_text(encoding="utf-8")
             html = html.replace("__TOKEN__",   _TOKEN)
             html = html.replace("__VERSION__", __version__)
-            body = html.encode()
-            self._send(200, body, "text/html; charset=utf-8")
+            self._send(200, html.encode(), "text/html; charset=utf-8")
             return
 
         if not self._guard():
             return
 
-        qs = parse_qs(parsed.query)
+        qs    = urllib.parse.parse_qs(parsed.query)
         queue = qs.get("queue", [None])[0]
 
         routes = {
-            "/api/printers":  self._api_printers,
-            "/api/queues":    self._api_queues,
-            "/api/jobs":      lambda: self._api_jobs(queue),
-            "/api/options":   lambda: self._api_options(queue),
-            "/api/ink":       lambda: self._api_ink(queue),
-            "/api/papersize": lambda: self._api_papersize(queue),
-            "/api/distro":    self._api_distro,
-            "/api/version":   self._api_version,
+            "/api/printers":  self._printers,
+            "/api/queues":    self._queues,
+            "/api/jobs":      lambda: self._jobs(queue),
+            "/api/options":   lambda: self._options(queue),
+            "/api/ink":       lambda: self._ink(queue),
+            "/api/papersize": lambda: self._papersize(queue),
+            "/api/distro":    self._distro,
+            "/api/version":   self._version,
+            "/api/ping":      lambda: _ok(pong=True),
         }
 
         handler = routes.get(path)
         if handler:
             self._dispatch(*handler())
         else:
-            self._send(404, b"Not Found", "text/plain")
+            self._send(404, b"Not found", "text/plain")
 
     # ── POST ─────────────────────────────────────────────────────────────────
 
     def do_POST(self):
         if not self._guard():
             return
-        path = urlparse(self.path).path
+        path = urllib.parse.urlparse(self.path).path
 
         routes = {
-            "/api/setup":        self._api_setup,
-            "/api/print":        self._api_print,
-            "/api/cancel":       self._api_cancel,
-            "/api/set-defaults": self._api_set_defaults,
-            "/api/remove-queue": self._api_remove_queue,
-            "/api/install-pkg":  self._api_install_pkg,
+            "/api/setup":        self._setup,
+            "/api/print":        self._print,
+            "/api/upload":       self._upload,
+            "/api/cancel":       self._cancel,
+            "/api/set-defaults": self._set_defaults,
+            "/api/remove-queue": self._remove_queue,
+            "/api/install-pkg":  self._install_pkg,
+            "/api/test":         self._test,
+            "/api/sync":         self._sync,
+            "/api/update":       self._update,
+            "/api/probe":        self._probe,
+            "/api/contribute":   self._contribute,
         }
 
         handler = routes.get(path)
         if handler:
             self._dispatch(*handler())
         else:
-            self._send(404, b"Not Found", "text/plain")
+            self._send(404, b"Not found", "text/plain")
 
-    # ── API implementations ──────────────────────────────────────────────────
+    # ── API: GET endpoints ────────────────────────────────────────────────────
 
-    def _api_printers(self):
+    def _printers(self):
         try:
             return _json(detect_printers())
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_queues(self):
+    def _queues(self):
         try:
             return _json(list_queues())
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_jobs(self, queue):
+    def _jobs(self, queue):
         try:
             return _json(list_jobs(queue))
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_options(self, queue):
+    def _options(self, queue):
         if not queue:
             return _err("queue parameter required")
         try:
             return _json(get_options(queue))
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_ink(self, queue):
+    def _ink(self, queue):
         try:
-            return _json(get_ink_levels(queue) if queue else {})
+            return _json(get_ink_levels(queue) if queue else [])
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_papersize(self, queue):
+    def _papersize(self, queue):
         try:
-            return _json({"papersize": get_papersize(queue) if queue else "a4"})
+            if not queue:
+                return _json({"papersize": "A4"})
+            opts = get_options(queue)
+            ps   = next((o for o in opts if o["key"].lower() == "pagesize"), None)
+            default = ps["default"] if ps else "A4"
+            return _json({"papersize": default})
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_distro(self):
+    def _distro(self):
         try:
-            d = distro()
-            pkgs = package_commands({"packages": {}})
-            return _json({"distro": d, "package_manager": pkgs.get("manager", "")})
+            d  = distro()
+            pc = package_commands({"packages": {}})
+            return _json({"distro": d, "package_manager": pc[0][0][0] if pc else d})
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_version(self):
+    def _version(self):
         return _json({"version": __version__})
 
-    def _api_setup(self):
+    # ── API: POST endpoints ───────────────────────────────────────────────────
+
+    def _upload(self):
+        """Accept raw file bytes, save to /tmp, return filesystem path."""
         try:
-            data = _read_body(self)
+            raw = _body_raw(self)
+            if not raw:
+                return _err("No file data received")
+            if len(raw) > 150 * 1024 * 1024:   # 150 MB limit
+                return _err("File too large (150 MB max)")
+
+            fname  = urllib.parse.unquote(self.headers.get("X-Filename", "print_job"))
+            suffix = pathlib.Path(fname).suffix.lower()
+            if suffix not in _UPLOAD_EXTS:
+                suffix = ".pdf"
+
+            tmp = tempfile.NamedTemporaryFile(
+                prefix="pe_", suffix=suffix, dir="/tmp", delete=False
+            )
+            tmp.write(raw)
+            tmp.close()
+            return _ok(path=tmp.name, filename=fname, size=len(raw))
+        except Exception as e:
+            return _err(e)
+
+    def _setup(self):
+        try:
+            data = _body_json(self)
             uri  = data.get("uri", "")
             name = data.get("name", "")
-            if not uri or not name:
-                return _err("uri and name required")
+            if not uri:
+                return _err("uri required")
 
-            drivers = list_drivers(uri)
-            profile_name = data.get("profile", "generic")
+            # Load profile
+            pid   = data.get("profile", "generic")
+            pfile = _HERE.parent / "profiles" / f"{pid}.json"
+            if not pfile.exists():
+                pfile = _HERE.parent / "profiles" / "generic.json"
+            profile = json.loads(pfile.read_text())
 
-            # load profile JSON
-            profile_path = _HERE.parent / "profiles" / f"{profile_name}.json"
-            if not profile_path.exists():
-                profile_path = _HERE.parent / "profiles" / "generic.json"
-            profile = json.loads(profile_path.read_text())
-
-            driver = find_driver(profile, drivers)
-            if not driver:
-                driver = "everywhere"  # IPP Everywhere universal fallback
-
-            ppd_opts = data.get("ppd_options", {})
-            ok, msg = setup_queue(name, uri, driver, ppd_opts)
-            if ok:
-                return _ok(queue=name, driver=driver, message=msg)
-            return _err(msg)
+            drivers    = list_drivers()
+            ppd_opts   = data.get("ppd_options", {})
+            result     = setup_queue(uri, profile, name=name or None, drivers=drivers)
+            if not result["ok"]:
+                return _err(result.get("message", result.get("error", "Setup failed")))
+            return _ok(queue=result["queue"], driver=result["driver"])
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_print(self):
+    def _print(self):
         try:
-            data  = _read_body(self)
-            queue = data.get("queue", "")
+            data     = _body_json(self)
+            queue    = data.get("queue", "")
             filepath = data.get("file", "")
-            if not queue or not filepath:
-                return _err("queue and file required")
-            args = build_print_args(
-                queue=queue,
-                copies=int(data.get("copies", 1)),
-                media=data.get("media", ""),
-                sides=data.get("sides", ""),
-                quality=data.get("quality", ""),
-                color=data.get("color", ""),
-                grayscale=bool(data.get("grayscale", False)),
-                resolution=data.get("resolution", ""),
-                scale=bool(data.get("fit_to_page", False)),
-                extra=data.get("extra", {}),
-            )
-            import subprocess
-            result = subprocess.run(["lp"] + args + [filepath],
-                                    capture_output=True, text=True, timeout=15)
-            if result.returncode == 0:
-                job_id = ""
-                for token in result.stdout.split():
-                    if token.startswith("request"):
-                        job_id = token
-                return _ok(job_id=job_id)
-            return _err(result.stderr.strip() or "lp failed")
-        except Exception as e:
-            return _err(str(e))
 
-    def _api_cancel(self):
+            if not queue or not filepath:
+                return _err("queue and file are both required")
+            if not pathlib.Path(filepath).exists():
+                return _err(f"File not found on server: {filepath}")
+
+            opts = get_options(queue)
+            cmd, notes = build_print_args(
+                queue      = queue,
+                path       = filepath,
+                opts       = opts,
+                size       = data.get("media", "A4"),
+                borderless = bool(data.get("borderless", False)),
+                photo      = bool(data.get("photo", False)),
+                copies     = int(data.get("copies", 1)),
+                grayscale  = bool(data.get("grayscale", False)),
+                resolution = data.get("resolution") or None,
+                scale      = bool(data.get("fit_to_page", False)),
+            )
+            from .core import run
+            rc, out, err = run(cmd, timeout=15)
+            if rc == 0:
+                job_id = next((t for t in out.split() if t.startswith("request")), "")
+                return _ok(job_id=job_id, notes=notes)
+            return _err((err or out).strip() or "lp returned non-zero")
+        except Exception as e:
+            return _err(e)
+
+    def _cancel(self):
         try:
-            data   = _read_body(self)
+            data   = _body_json(self)
             job_id = data.get("job_id", "")
             if not job_id:
                 return _err("job_id required")
-            ok, msg = cancel_job(job_id)
-            if ok:
-                return _ok(message=msg)
-            return _err(msg)
+            result = cancel_job(job_id)
+            return _ok(**result) if result["ok"] else _err(result["message"])
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_set_defaults(self):
+    def _set_defaults(self):
         try:
-            data    = _read_body(self)
+            data    = _body_json(self)
             queue   = data.get("queue", "")
             options = data.get("options", {})
             if not queue or not options:
                 return _err("queue and options required")
-            ok, msg = set_defaults(queue, options)
-            if ok:
-                return _ok(message=msg)
-            return _err(msg)
+            result = set_defaults(queue, options)
+            return _ok(**result) if result["ok"] else _err(result["message"])
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_remove_queue(self):
+    def _remove_queue(self):
         try:
-            data  = _read_body(self)
+            data  = _body_json(self)
             queue = data.get("queue", "")
             if not queue:
                 return _err("queue required")
-            ok, msg = remove_queue(queue)
-            if ok:
-                return _ok(message=msg)
-            return _err(msg)
+            result = remove_queue(queue)
+            return _ok(**result) if result["ok"] else _err(result["message"])
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
 
-    def _api_install_pkg(self):
-        """Trigger package install for printer drivers (best-effort)."""
+    def _install_pkg(self):
+        """Return the install command (don't run it — UI shows it to user)."""
         try:
-            data    = _read_body(self)
+            data    = _body_json(self)
             profile = data.get("profile", {})
-            cmds    = package_commands(profile)
-            if not cmds.get("install"):
-                return _ok(message="No packages to install for this profile.")
-            import subprocess
-            pkgs = " ".join(cmds.get("packages", []))
-            # We just return the command; the UI shows it.
-            return _ok(command=cmds.get("install", ""), packages=cmds.get("packages", []))
+            mgr     = distro()
+            cmds    = package_commands(profile, mgr=mgr)
+            if not cmds:
+                return _ok(commands=[], message="No packages needed for this profile.")
+            return _ok(
+                commands=[{"cmd": c[0], "needs_root": c[1]} for c in cmds],
+                manager=mgr,
+            )
         except Exception as e:
-            return _err(str(e))
+            return _err(e)
+
+    def _test(self):
+        """Generate and print a test page (edge or nozzle)."""
+        try:
+            data  = _body_json(self)
+            queue = data.get("queue", "")
+            kind  = data.get("kind", "edge")
+            bl    = bool(data.get("borderless", False))
+            if not queue:
+                return _err("queue required")
+            from .core import print_generated
+            result = print_generated(queue, kind, borderless=bl)
+            return _ok(**result) if result["ok"] else _err(result["message"])
+        except Exception as e:
+            return _err(e)
+
+    def _sync(self):
+        try:
+            result = sync_profiles()
+            return _ok(**result) if result["ok"] else _err(result["message"])
+        except Exception as e:
+            return _err(e)
+
+    def _update(self):
+        try:
+            result = self_update()
+            return _ok(**result) if result["ok"] else _err(result["message"])
+        except Exception as e:
+            return _err(e)
+
+    def _probe(self):
+        try:
+            data = _body_json(self)
+            queue = data.get("queue", "")
+            uri   = data.get("uri", "")
+            pid   = data.get("profile", "generic")
+            create = bool(data.get("create", False))
+
+            pfile = _HERE.parent / "profiles" / f"{pid}.json"
+            if not pfile.exists():
+                pfile = _HERE.parent / "profiles" / "generic.json"
+            profile = json.loads(pfile.read_text())
+
+            report = probe_siblings(profile, uri, create=create, main=slug(queue) if queue else None)
+            return _ok(report=report)
+        except Exception as e:
+            return _err(e)
+
+    def _contribute(self):
+        try:
+            data    = _body_json(self)
+            printer = data.get("printer", {})
+            draft   = learn_draft(printer)
+            url     = issue_url(draft)
+            webbrowser.open(url)
+            return _ok(url=url, draft=draft)
+        except Exception as e:
+            return _err(e)
 
 
 # ── server entry point ───────────────────────────────────────────────────────
 
-class _ReuseServer(ThreadingHTTPServer):
-    allow_reuse_address = True   # SO_REUSEADDR — no "Address in use" after crash/restart
+class _Server(ThreadingHTTPServer):
+    allow_reuse_address = True
 
 
 def main():
-    port = int(os.environ.get("PRINTEASE_PORT", _PORT))
-    host = os.environ.get("PRINTEASE_HOST", _HOST)
-    url  = f"http://{host}:{port}/"
-
+    url = f"http://{_HOST}:{_PORT}/"
     try:
-        httpd = _ReuseServer((host, port), _Handler)
+        httpd = _Server((_HOST, _PORT), _Handler)
     except OSError as exc:
-        if exc.errno == 98:   # EADDRINUSE
-            print(f"PrintEase already running on port {port}. Opening browser.")
+        if exc.errno == 98:
+            print(f"PrintEase already running. Opening {url}")
             webbrowser.open(url)
             return
         raise
+
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()
+    print(f"PrintEase {__version__}  →  {url}")
+    print("Stop with Ctrl+C  |  Logs: none (quiet mode)")
 
-    print(f"PrintEase {__version__} running → {url}")
-
-    # Give the server a moment, then open the browser in a separate thread
-    # so it never blocks the daemon process from running.
     def _open():
-        time.sleep(0.4)
+        time.sleep(0.35)
         webbrowser.open(url)
-
     threading.Thread(target=_open, daemon=True).start()
 
     try:
-        t.join()          # block here — the launcher's nohup keeps us alive
+        t.join()
     except KeyboardInterrupt:
         httpd.shutdown()
+        print("\nStopped.")

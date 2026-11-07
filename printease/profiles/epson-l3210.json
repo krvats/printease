@@ -1,0 +1,78 @@
+{
+  "id": "epson-l3210",
+  "name": "Epson L3210",
+  "queue_name": "L3210",
+  "priority": 10,
+  "match": [
+    "L3210",
+    "EPSON.*L32\\d\\d"
+  ],
+  "driver_hints": [
+    "escpr2.*L3210",
+    "L3210",
+    "escpr2.*L32\\d\\d"
+  ],
+  "siblings": [
+    "L3250",
+    "L3260",
+    "L3150",
+    "L3110",
+    "L3156",
+    "L3160",
+    "L3216",
+    "L3251",
+    "L3256",
+    "L3258",
+    "L1210",
+    "L1250",
+    "L382",
+    "L380",
+    "L385",
+    "L395"
+  ],
+  "borderless_sizes": [
+    "4x6",
+    "A4"
+  ],
+  "packages": {
+    "pacman": [
+      "cups",
+      "cups-filters",
+      "ghostscript",
+      "avahi",
+      "nss-mdns",
+      "polkit"
+    ],
+    "aur": [
+      "epson-inkjet-printer-escpr2"
+    ],
+    "apt": [
+      "cups",
+      "printer-driver-escpr",
+      "ghostscript"
+    ],
+    "dnf": [
+      "cups",
+      "ghostscript"
+    ],
+    "zypper": [
+      "cups",
+      "ghostscript"
+    ]
+  },
+  "maintenance": [
+    {
+      "title": "Head cleaning",
+      "how": "Hold the ink (droplet) button on the printer for 3 seconds."
+    },
+    {
+      "title": "Nozzle check",
+      "how": "Print the nozzle pattern below. Gaps or missing colour bars mean a clean is needed."
+    },
+    {
+      "title": "Ink refill",
+      "how": "EcoTank: refill only with the matching Epson bottle colour, then press the ink button once."
+    }
+  ],
+  "notes": "Epson lists borderless for 4x6 in photo paper; A4 borderless may not exist in every driver version."
+}

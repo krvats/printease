@@ -1,0 +1,37 @@
+{
+  "id": "hp",
+  "name": "HP printer",
+  "match": [
+    "^HP$",
+    "Hewlett",
+    "\\bHP\\b"
+  ],
+  "driver_hints": [
+    "hplip",
+    "hp-"
+  ],
+  "packages": {
+    "pacman": [
+      "cups",
+      "hplip"
+    ],
+    "apt": [
+      "cups",
+      "hplip"
+    ],
+    "dnf": [
+      "cups",
+      "hplip"
+    ],
+    "zypper": [
+      "cups",
+      "hplip"
+    ]
+  },
+  "maintenance": [
+    {
+      "title": "Cleaning & alignment",
+      "how": "Run 'hp-toolbox' (from hplip)."
+    }
+  ]
+}

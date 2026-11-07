@@ -1,0 +1,28 @@
+{
+  "profiles": [
+    {
+      "file": "brother.json",
+      "sha256": "fcc3f5062aa0a41739d5af7b04b3f255258abc9cd76f036469662c560316add9"
+    },
+    {
+      "file": "canon.json",
+      "sha256": "71feae2cc0ced3418840dd29095009af7b7339b708e904ca0d059d998270c3a4"
+    },
+    {
+      "file": "epson-escpr.json",
+      "sha256": "200902e61be81e61a0c3f4bb47aaa4d78c2edb801144160ae9a11d867befb720"
+    },
+    {
+      "file": "epson-l3210.json",
+      "sha256": "7f51acd0ef7484f517efdd2cf0634b1c90e36e061809a12977e6a0570a30065e"
+    },
+    {
+      "file": "generic.json",
+      "sha256": "e101a761320ae7f5a54783aa0737284d8dfc096f318fd79c069a1b3a2d42f3f0"
+    },
+    {
+      "file": "hp.json",
+      "sha256": "19047d3fda6762970266224c51bdaf96e6417e0c15c42ad0dbb474f3d63e6403"
+    }
+  ]
+}
